@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Definitely Not a Robot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#141433,#1f1f4d 60%,#2b2b6b);min-height:100vh;color:#222;display:flex;flex-direction:column;align-items:center;padding:24px 16px}
+.screen{width:100%;max-width:460px}
+.hidden{display:none!important}
+.cap-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.45);margin-top:10px}
+.cap-header{background:#2b7de9;color:#fff;padding:12px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;font-size:1.05rem}
+.cap-header #mute-btn{cursor:pointer;user-select:none}
+.cap-sub{background:#e8f0fe;color:#1a56c4;font-size:.85rem;padding:8px 16px;font-weight:600}
+#fail-msg{display:none;background:#fdecea;color:#b3261e;padding:10px 16px;font-size:.9rem;font-weight:600}
+#lvl-body{padding:20px 18px;min-height:280px}
+.cap-footer{padding:14px 18px;border-top:1px solid #eee;text-align:right}
+.btn{background:#2b7de9;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:1rem;font-weight:700;cursor:pointer}
+.btn:active{transform:scale(.97)}
+.big-btn{display:block;width:100%;margin:8px 0}
+.prompt{font-size:1.05rem;margin-bottom:14px;font-weight:600;line-height:1.45}
+.hint{min-height:1.4em;color:#666;font-size:.9rem;margin-top:10px;font-style:italic;line-height:1.4}
+.grid9{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.cell{background:#f1f3f4;border-radius:8px;font-size:2.2rem;aspect-ratio:1;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;border:3px solid transparent;-webkit-tap-highlight-color:transparent}
+.cell.sel{border-color:#2b7de9;background:#e8f0fe}
+.cell.done{background:#c8e6c9;border-color:#4caf50}
+.wavy{font-size:2rem;letter-spacing:4px;background:#f1f3f4;padding:16px 8px;border-radius:8px;text-align:center;margin:10px 0;user-select:none;overflow:hidden}
+@keyframes wob{from{translate:0 -5px}to{translate:0 5px}}
+input[type=text]{width:100%;padding:12px;font-size:1.05rem;border:2px solid #ccc;border-radius:8px;margin:8px 0}
+input[type=range]{width:100%;height:44px}
+.cb-area{position:relative;min-height:96px;background:#f8f9fa;border:1px dashed #ccc;border-radius:8px;margin:10px 0;overflow:hidden}
+.cb-label{display:inline-flex;align-items:center;gap:10px;background:#fff;border:2px solid #ccc;border-radius:8px;padding:12px 16px;cursor:pointer;font-size:1.05rem;position:relative;left:10px;top:22px;user-select:none;-webkit-tap-highlight-color:transparent}
+.cb-label input{width:22px;height:22px;cursor:pointer}
+#cc{border:2px solid #ccc;border-radius:8px;touch-action:none;background:#fafafa;display:block;margin:0 auto;cursor:crosshair;max-width:100%}
+.holes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0}
+.hole{background:#e8e4d8;border-radius:50%;aspect-ratio:1;font-size:2.4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.crowd{display:flex;flex-wrap:wrap;gap:2px;font-size:22px;line-height:1.3;user-select:none}
+.crowd span{cursor:pointer;padding:2px;border-radius:4px}
+.crowd span:hover{background:#e8f0fe}
+.timer{font-size:1.4rem;font-weight:800;text-align:center;margin:8px 0}
+.slots{display:flex;gap:10px;justify-content:center;margin:14px 0}
+.slot{background:#f1f3f4;border-radius:10px;font-size:3rem;width:84px;height:84px;display:flex;align-items:center;justify-content:center}
+.slot.spin{animation:spin .12s linear infinite}
+@keyframes spin{50%{transform:translateY(-8px)}}
+.nest{border:2px dashed #2b7de9;border-radius:10px;padding:12px;margin:10px 0;background:#f8fbff}
+.nest.locked{opacity:.45;pointer-events:none}
+.nest p{margin-bottom:8px}
+.eye-row{margin:8px 0;text-align:center;font-weight:700;letter-spacing:6px}
+.math-row{display:flex;gap:12px;justify-content:center;margin:16px 0;flex-wrap:wrap}
+.math-btn{font-size:1.6rem;padding:14px 22px;border-radius:10px;border:2px solid #2b7de9;background:#fff;cursor:pointer;font-weight:800;min-width:70px}
+#flash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,20,60,.88);color:#4caf50;font-size:4.5rem;font-weight:900;z-index:50;text-align:center;padding:20px}
+footer{color:#8a8ab0;margin-top:26px;font-size:.85rem;text-align:center}
+.title-card{background:#fff;border-radius:16px;padding:36px 28px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.45);margin-top:10px}
+.title-card h1{font-size:1.9rem;margin-bottom:8px}
+.title-card .sub{color:#555;margin-bottom:22px;line-height:1.5}
+#how-text{display:none;background:#f1f3f4;border-radius:10px;padding:14px;margin:12px 0;text-align:left;font-size:.92rem;line-height:1.6;color:#444}
+.stat-row{display:flex;gap:12px;justify-content:center;margin:18px 0}
+.stat{background:#f1f3f4;border-radius:10px;padding:14px 22px;text-align:center}
+.stat .v{font-size:1.6rem;font-weight:800;color:#2b7de9}
+.stat .k{font-size:.8rem;color:#666}
+.linklike{background:none;border:none;color:#2b7de9;cursor:pointer;font-size:.85rem;margin-top:10px;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div id="screen-title" class="screen">
+  <div class="title-card">
+    <div style="font-size:3.5rem">🤖</div>
+    <h1>Definitely Not a Robot</h1>
+    <p class="sub">The world's most reasonable human-verification system.<br>15 checks. Zero mercy. Probably.</p>
+    <button class="btn big-btn" id="start-btn"><span id="start-label">Start Verification</span></button>
+    <button class="btn big-btn" id="how-btn" style="background:#5f6368">How This Works</button>
+    <div id="how-text">
+      <strong>How this works:</strong><br>
+      1. Complete 15 increasingly unhinged verification checks.<br>
+      2. Fail, and you will be judged.<br>
+      3. Pass them all and earn the title of Certified Human (probably).<br><br>
+      No actual robots were consulted in the making of this quiz. They were too busy failing check #4.
+    </div>
+    <button class="linklike" id="reset-btn">erase my progress and start over</button>
+  </div>
+</div>
+
+<div id="screen-game" class="screen hidden">
+  <div class="cap-card">
+    <div class="cap-header"><span>🛡️ Human Verification Service</span><span id="mute-btn" title="mute">🔊</span></div>
+    <div class="cap-sub"><span id="lvl-num">Check 1/15</span> · please do not be a robot</div>
+    <div id="fail-msg"></div>
+    <div id="lvl-body"></div>
+    <div class="cap-footer"><button id="verify-btn" class="btn">Verify</button></div>
+  </div>
+</div>
+
+<div id="screen-win" class="screen hidden">
+  <div class="title-card">
+    <div style="font-size:3.5rem">🎓</div>
+    <h1>Certified 100% Human<br>(probably)</h1>
+    <p class="sub">The council has reviewed your performance and decided you are almost certainly not a toaster.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="v" id="stat-time">0:00</div><div class="k">total time</div></div>
+      <div class="stat"><div class="v" id="stat-fails">0</div><div class="k">fails</div></div>
+    </div>
+    <button class="btn big-btn" id="again-btn">Get Verified Again</button>
+  </div>
+</div>
+
+<div id="flash">✓<br><span style="font-size:1.5rem">VERIFIED</span></div>
+<footer>made with 🤖 (allegedly)</footer>
+
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+function $(id){return document.getElementById(id);}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pick(a){return a[rand(0,a.length-1)];}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(0,i);const t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+/* ---------- audio ---------- */
+let AC=null, muted=false;
+function tone(f,d,type,when){
+  if(muted) return;
+  d=d||0.12; type=type||"sine"; when=when||0;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type=type; o.frequency.value=f;
+    g.gain.setValueAtTime(0.12,AC.currentTime+when);
+    g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+when+d);
+    o.connect(g); g.connect(AC.destination);
+    o.start(AC.currentTime+when); o.stop(AC.currentTime+when+d);
+  }catch(e){}
+}
+const sfx={
+  click:function(){tone(600,0.07);},
+  ok:function(){tone(523,0.12);tone(659,0.12,"sine",0.1);tone(784,0.22,"sine",0.2);},
+  bad:function(){tone(150,0.28,"sawtooth");},
+  pop:function(){tone(880,0.06);},
+  tick:function(){tone(1050,0.05);}
+};
+
+/* ---------- state ---------- */
+const TOTAL=15;
+let lvl=0, fails=0, startTime=0;
+let timers=[];
+function clearTimers(){for(const t of timers){clearInterval(t);clearTimeout(t);}timers=[];}
+function saveProg(){try{localStorage.setItem("dnr_progress",String(lvl));}catch(e){}}
+function loadProg(){try{const v=parseInt(localStorage.getItem("dnr_progress")||"0",10);return (v>=0&&v<TOTAL)?v:0;}catch(e){return 0;}}
+function clearProg(){try{localStorage.removeItem("dnr_progress");}catch(e){}}
+
+const QUIPS=[
+  "Hmm. Suspiciously human. Or suspiciously robot?",
+  "A robot would have given up by now. Or would it?",
+  "Wow. Okay. Moving on. ...Just kidding. Again.",
+  "Error 418: I am a teapot. You are... unclear.",
+  "Noted. The council will review your humanity.",
+  "Bold strategy. Wrong, but bold.",
+  "Even my training data is embarrassed for you."
+];
+
+function show(id){
+  const screens=document.querySelectorAll(".screen");
+  for(const s of screens) s.classList.add("hidden");
+  $(id).classList.remove("hidden");
+}
+let verifyFn=null;
+function setVerify(fn,label){
+  verifyFn=fn;
+  const b=$("verify-btn");
+  b.style.display="inline-block";
+  b.textContent=label||"Verify";
+  b.onclick=function(){sfx.click();fn();};
+}
+function hideVerify(){$("verify-btn").style.display="none";verifyFn=null;}
+function hint(body,msg){
+  let h=body.querySelector(".hint");
+  if(!h){h=document.createElement("p");h.className="hint";body.appendChild(h);}
+  h.textContent=msg;
+}
+function fail(msg){
+  fails++; sfx.bad(); clearTimers();
+  const fm=$("fail-msg");
+  fm.textContent=msg||pick(QUIPS);
+  fm.style.display="block";
+  timers.push(setTimeout(function(){
+    fm.style.display="none";
+    renderLevel();
+  },1500));
+}
+function pass(){
+  clearTimers(); sfx.ok();
+  const f=$("flash");
+  f.style.display="flex";
+  timers.push(setTimeout(function(){
+    f.style.display="none";
+    lvl++; saveProg();
+    if(lvl>=TOTAL){showWin();}
+    else{renderLevel();}
+  },800));
+}
+function renderLevel(){
+  clearTimers();
+  $("lvl-num").textContent="Check "+(lvl+1)+"/"+TOTAL;
+  const body=$("lvl-body");
+  body.innerHTML="";
+  hideVerify();
+  LEVELS[lvl].render(body);
+  window.scrollTo(0,0);
+}
+function wavyWord(el,word){
+  el.innerHTML="";
+  for(let i=0;i<word.length;i++){
+    const s=document.createElement("span");
+    s.textContent=word[i];
+    s.style.display="inline-block";
+    s.style.transform="rotate("+rand(-28,28)+"deg) translateY("+rand(-6,6)+"px)";
+    s.style.animation="wob "+(rand(8,14)/10)+"s ease-in-out "+(i*0.09)+"s infinite alternate";
+    el.appendChild(s);
+  }
+}
+function addDodge(area,dodges){
+  area.innerHTML='<label class="cb-label" id="dg"><input type="checkbox" id="dg-cb"><span>I\'m not a robot</span></label>';
+  const d=$("dg");
+  let n=0;
+  const move=function(){
+    if(n>=dodges) return;
+    n++; sfx.pop();
+    d.style.position="absolute";
+    d.style.left=rand(0,150)+"px";
+    d.style.top=rand(0,36)+"px";
+  };
+  d.addEventListener("pointerenter",move);
+  d.addEventListener("touchstart",move,{passive:true});
+  return $("dg-cb");
+}
+function scoreCircle(pts){
+  if(pts.length<25) return {ok:false,why:"That was a dot. Draw a CIRCLE."};
+  let cx=0,cy=0;
+  for(const p of pts){cx+=p.x;cy+=p.y;}
+  cx/=pts.length; cy/=pts.length;
+  const rs=pts.map(function(p){return Math.hypot(p.x-cx,p.y-cy);});
+  const mean=rs.reduce(function(a,b){return a+b;},0)/rs.length;
+  if(mean<20) return {ok:false,why:"Bigger. Commit to the circle."};
+  const sd=Math.sqrt(rs.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/rs.length);
+  const cv=sd/mean;
+  return {ok:cv<0.30,score:Math.max(0,Math.round(100-cv*250))};
+}
+const WORDS=["quixotic","wobble","definitely","squiggle","captcha","banana","verify","suspicious","noodle","human"];
+
+/* ---------- LEVELS 1-8 ---------- */
+function r1(body){
+  body.innerHTML='<p class="prompt">Please confirm you are not a robot.</p><div class="cb-area" id="cb-area"></div><p class="hint"></p>';
+  const cb=addDodge($("cb-area"),3);
+  setVerify(function(){
+    if(cb.checked) pass();
+    else fail("You didn't even check the box. Classic robot behavior.");
+  });
+}
+
+function r2(body){
+  const targets=["🚦","🚥"], decoys=["🚧","🧱","🚗","🛑","🏗️","⛽","🚏","🚕"];
+  body.innerHTML='<p class="prompt">Select all <strong>traffic lights</strong> 🚦</p><div class="grid9" id="g"></div><p class="hint"></p>';
+  const cells=[];
+  const nT=rand(3,4);
+  for(let i=0;i<nT;i++) cells.push(pick(targets));
+  while(cells.length<9) cells.push(pick(decoys));
+  shuffle(cells);
+  const g=$("g"), chosen=new Set();
+  cells.forEach(function(e,i){
+    const d=document.createElement("div");
+    d.className="cell"; d.textContent=e;
+    d.onclick=function(){
+      sfx.click();
+      d.classList.toggle("sel");
+      if(chosen.has(i)) chosen.delete(i); else chosen.add(i);
+    };
+    g.appendChild(d);
+  });
+  setVerify(function(){
+    let ok=true;
+    cells.forEach(function(e,i){
+      const isT=targets.indexOf(e)>=0, sel=chosen.has(i);
+      if(isT!==sel) ok=false;
+    });
+    if(ok) pass();
+    else fail("Wrong. Fun fact: 🚥 counts too. The grid has reshuffled out of spite.");
+  });
+}
+
+function r3(body){
+  const word=pick(WORDS);
+  let tries=3;
+  body.innerHTML='<p class="prompt">Type the wavy word. It\'s wavy for your protection.</p><div class="wavy" id="w"></div><input type="text" id="w-in" placeholder="type the word" autocomplete="off" autocapitalize="off"><p class="hint"></p>';
+  wavyWord($("w"),word);
+  setVerify(function(){
+    if($("w-in").value.trim().toLowerCase()===word){pass();return;}
+    tries--; sfx.bad();
+    if(tries<=0){fail('Three strikes. The word was "'+word+'". It believed in you.');}
+    else{$("w-in").value="";hint(body,"Nope. "+tries+" tries left. Squint harder.");}
+  });
+  $("w-in").addEventListener("keydown",function(e){if(e.key==="Enter")$("verify-btn").click();});
+}
+
+function r4(body){
+  body.innerHTML='<p class="prompt">Drag the slider to <strong>EXACTLY 50%</strong>. Close enough is not a human trait.</p>'
+    +'<input type="range" id="sl" min="0" max="100" value="20">'
+    +'<p class="timer"><span id="sl-val">20</span>%</p><p class="hint"></p>';
+  $("sl").addEventListener("input",function(){$("sl-val").textContent=$("sl").value;});
+  setVerify(function(){
+    const v=parseInt($("sl").value,10);
+    if(Math.abs(v-50)<=2) pass();
+    else fail("That is "+v+"%. Fifty. Five-zero. The middle one.");
+  });
+}
+
+function r5(body){
+  body.innerHTML='<p class="prompt">Draw a perfect circle. No pressure.</p><canvas id="cc" width="300" height="240"></canvas><p class="hint"></p><button class="btn" id="cc-clear" style="background:#888;margin-top:8px">Clear</button>';
+  hideVerify();
+  const cv=$("cc"), ctx=cv.getContext("2d");
+  let pts=[], drawing=false;
+  const pos=function(e){
+    const r=cv.getBoundingClientRect();
+    return {x:(e.clientX-r.left)*(cv.width/r.width),y:(e.clientY-r.top)*(cv.height/r.height)};
+  };
+  cv.addEventListener("pointerdown",function(e){
+    drawing=true; pts=[pos(e)];
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    try{cv.setPointerCapture(e.pointerId);}catch(err){}
+  });
+  cv.addEventListener("pointermove",function(e){
+    if(!drawing) return;
+    const p=pos(e); pts.push(p);
+    ctx.lineTo(p.x,p.y);
+    ctx.strokeStyle="#2b7de9"; ctx.lineWidth=4; ctx.lineCap="round"; ctx.lineJoin="round";
+    ctx.stroke();
+  });
+  cv.addEventListener("pointerup",function(){
+    if(!drawing) return;
+    drawing=false;
+    const r=scoreCircle(pts);
+    if(!r.ok){sfx.bad();hint(body,r.why||"Not round enough.");return;}
+    hint(body,"Roundness: "+r.score+"% — suspiciously circular. Verified!");
+    timers.push(setTimeout(pass,700));
+  });
+  $("cc-clear").onclick=function(){
+    ctx.clearRect(0,0,cv.width,cv.height); pts=[];
+    hint(body,"Fresh canvas. Fresh start. Same shaky hands.");
+  };
+}
+
+function r6(body){
+  hideVerify();
+  body.innerHTML='<p class="prompt">Whack <strong>6 or more 🤖</strong> in 15 seconds. Do NOT whack the 🐱s. They are innocent.</p><p class="timer"><span id="w-t">15</span>s · Score: <span id="w-s">0</span></p><div class="holes" id="holes"></div><p class="hint"></p>';
+  const holesEl=$("holes");
+  let score=0, t=15, alive=true;
+  const cells=[];
+  for(let i=0;i<9;i++){
+    const h=document.createElement("div");
+    h.className="hole";
+    holesEl.appendChild(h); cells.push(h);
+    h.addEventListener("pointerdown",function(){
+      const e=h.textContent;
+      if(e==="🤖"){score++;sfx.pop();h.textContent="";}
+      else if(e==="🐱"){score--;sfx.bad();h.textContent="";hint(body,"You whacked a cat. It will remember this.");}
+      const se=$("w-s"); if(se) se.textContent=score;
+    });
+  }
+  timers.push(setInterval(function(){
+    if(!alive) return;
+    const h=pick(cells);
+    if(h.textContent!=="") return;
+    h.textContent=Math.random()<0.72?"🤖":"🐱";
+    setTimeout(function(){h.textContent="";},700);
+  },500));
+  timers.push(setInterval(function(){
+    t--;
+    const te=$("w-t"); if(te) te.textContent=t;
+    if(t<=0){
+      alive=false;
+      if(score>=6) pass();
+      else fail("Score: "+score+". Needed 6. The bots remain unwhacked.");
+    }
+  },1000));
+}
+
+function r7(body){
+  hideVerify();
+  const N=42, hi=rand(0,N-1);
+  body.innerHTML='<p class="prompt">One of these is human. Find them. 30 seconds.</p><p class="timer"><span id="f-t">30</span>s</p><div class="crowd" id="crowd"></div><p class="hint"></p>';
+  const c=$("crowd");
+  for(let i=0;i<N;i++){
+    (function(i){
+      const s=document.createElement("span");
+      s.textContent=(i===hi?"🧑":"🤖");
+      s.onclick=function(){
+        if(i===hi){pass();}
+        else{sfx.tick();hint(body,pick(["That's a toaster.","Nope. That one pays taxes though.","Wrong. It waved back. Awkward."]));}
+      };
+      c.appendChild(s);
+    })(i);
+  }
+  let t=30;
+  timers.push(setInterval(function(){
+    t--;
+    const te=$("f-t"); if(te) te.textContent=t;
+    if(t<=0) fail("Time up. The human escaped. Or was never there.");
+  },1000));
+}
+
+function r8(body){
+  const decoys=["🥖","🍞","🥨"];
+  body.innerHTML='<p class="prompt">Select all <strong>croissants</strong> 🥐</p><div class="grid9" id="g8"></div><p class="hint"></p>';
+  const cells=[];
+  const nT=rand(4,5);
+  for(let i=0;i<nT;i++) cells.push("🥐");
+  while(cells.length<12) cells.push(pick(decoys));
+  shuffle(cells);
+  const g=$("g8"), chosen=new Set();
+  cells.forEach(function(e,i){
+    const d=document.createElement("div");
+    d.className="cell"; d.textContent=e;
+    d.onclick=function(){
+      sfx.click();
+      d.classList.toggle("sel");
+      if(chosen.has(i)) chosen.delete(i); else chosen.add(i);
+    };
+    g.appendChild(d);
+  });
+  setVerify(function(){
+    let ok=true;
+    cells.forEach(function(e,i){
+      const isT=(e==="🥐"), sel=chosen.has(i);
+      if(isT!==sel) ok=false;
+    });
+    if(ok) pass();
+    else fail("A baguette is not a croissant. This is basic humanity.");
+  });
+}
+
+/* ---------- LEVELS 9-15 ---------- */
+function r9(body){
+  hideVerify();
+  body.innerHTML='<p class="prompt"><strong>REVERSE TURING TEST:</strong> prove you are a ROBOT. Click all 9 squares in under 2 seconds.</p><p class="timer"><span id="r-ms">0</span> ms</p><div class="grid9" id="rg"></div><p class="hint"></p>';
+  const g=$("rg");
+  let start=0, done=0;
+  const total=9;
+  for(let i=0;i<total;i++){
+    const d=document.createElement("button");
+    d.className="cell"; d.style.fontSize="1.4rem"; d.textContent="▢";
+    d.onclick=function(){
+      if(d.classList.contains("done")) return;
+      if(!start) start=Date.now();
+      d.classList.add("done"); d.textContent="▣"; sfx.tick(); done++;
+      if(done===total){
+        const el=Date.now()-start;
+        if(el<2000) pass();
+        else fail("Too slow ("+el+"ms). Suspiciously human.");
+      }
+    };
+    g.appendChild(d);
+  }
+  timers.push(setInterval(function(){
+    if(start){const me=$("r-ms"); if(me) me.textContent=Date.now()-start;}
+  },50));
+}
+
+function r10(body){
+  body.innerHTML='<p class="prompt">Read the <strong>smallest row you can</strong>, and type it below.</p>'
+    +'<div class="eye-row" style="font-size:34px">E</div>'
+    +'<div class="eye-row" style="font-size:26px">F P</div>'
+    +'<div class="eye-row" style="font-size:20px">T O Z</div>'
+    +'<div class="eye-row" style="font-size:15px">L P E D</div>'
+    +'<div class="eye-row" style="font-size:11px">P E C F D</div>'
+    +'<div class="eye-row" style="font-size:7px">lol</div>'
+    +'<input type="text" id="e-in" placeholder="smallest row?" autocomplete="off" autocapitalize="off"><p class="hint"></p>';
+  setVerify(function(){
+    const v=$("e-in").value.trim().toLowerCase();
+    if(v==="lol") pass();
+    else fail("Interesting. An optometrist would love you. Try the TINY row.");
+  });
+  $("e-in").addEventListener("keydown",function(e){if(e.key==="Enter")$("verify-btn").click();});
+}
+
+function r11(body){
+  hideVerify();
+  body.innerHTML='<p class="prompt">What is <strong>2 + 2</strong>? (The answers are shy. They move every second.)</p><div class="math-row" id="mrow"></div><p class="hint"></p>';
+  const row=$("mrow");
+  const vals=shuffle([3,4,5]);
+  const build=function(){
+    row.innerHTML="";
+    vals.forEach(function(v){
+      const b=document.createElement("button");
+      b.className="math-btn"; b.textContent=v;
+      b.onclick=function(){
+        if(v===4) pass();
+        else fail(v+"? Really? Even the robot is disappointed.");
+      };
+      row.appendChild(b);
+    });
+  };
+  build();
+  timers.push(setInterval(function(){shuffle(vals);build();sfx.tick();},1100));
+}
+
+function r12(body){
+  hideVerify();
+  const outs=[["🧑","🧑","🤖"],["🧑","🤖","🧑"],["🧑","🧑","🧑"]];
+  let pulls=0;
+  body.innerHTML='<p class="prompt">Get three 🧑 in a row. Totally fair machine. Definitely not rigged.</p><div class="slots" id="slots"><div class="slot">❔</div><div class="slot">❔</div><div class="slot">❔</div></div><button class="btn big-btn" id="lever">🎰 PULL</button><p class="hint"></p>';
+  $("lever").onclick=function(){
+    if(pulls>=3) return;
+    const boxes=$("slots").children;
+    const res=outs[pulls]; pulls++;
+    sfx.click();
+    for(let i=0;i<boxes.length;i++){boxes[i].classList.add("spin");boxes[i].textContent=pick(["🤖","🧑","🐱","👾"]);}
+    timers.push(setTimeout(function(){
+      for(let i=0;i<3;i++){boxes[i].classList.remove("spin");boxes[i].textContent=res[i];}
+      if(pulls===1){hint(body,"SO CLOSE. The machine feels bad. (It does not.)");sfx.tick();}
+      else if(pulls===2){hint(body,'Again?! Okay, one more. The machine is "warming up".');sfx.tick();}
+      else{hint(body,"JACKPOT. Three humans. Never tell anyone the odds.");timers.push(setTimeout(pass,900));}
+    },700));
+  };
+}
+
+function r13(body){
+  hideVerify();
+  body.innerHTML='<p class="prompt">Verificationception. A check inside a check inside a check.</p>'
+    +'<div class="nest" id="n1"><p><strong>Inner check:</strong> confirm you are human.</p><label class="cb-label" style="position:static"><input type="checkbox" id="n1cb"> I am human</label></div>'
+    +'<div class="nest locked" id="n2"><p><strong>Middle check:</strong> click the human.</p><div class="math-row" id="n2row"></div></div>'
+    +'<div class="nest locked" id="n3"><p><strong>Outer check:</strong> type "hi".</p><input type="text" id="n3in" maxlength="10" placeholder="hi" autocomplete="off"><button class="btn" id="n3go" style="width:100%">Verify</button></div>'
+    +'<p class="hint"></p>';
+  $("n1cb").addEventListener("change",function(e){
+    if(e.target.checked){sfx.ok();$("n2").classList.remove("locked");hint(body,"Inner check passed. Going deeper.");}
+  });
+  const opts=shuffle(["🤖","🧑","🤖"]);
+  const row=$("n2row");
+  opts.forEach(function(e){
+    const b=document.createElement("button");
+    b.className="math-btn"; b.style.fontSize="2rem"; b.textContent=e;
+    b.onclick=function(){
+      if(e==="🧑"){sfx.ok();$("n3").classList.remove("locked");hint(body,"Middle check passed. One more layer.");}
+      else{sfx.bad();hint(body,"That is a toaster. Try again.");}
+    };
+    row.appendChild(b);
+  });
+  $("n3go").onclick=function(){
+    const v=$("n3in").value.trim().toLowerCase();
+    if(v==="hi") pass();
+    else fail('It just says "hi". Even robots can type "hi". Probably.');
+  };
+  $("n3in").addEventListener("keydown",function(e){if(e.key==="Enter")$("n3go").click();});
+}
+
+const AFFIRM_SNARK=[
+  "Nope. A human would type it right. Probably.",
+  "Wrong again. The robots are taking notes.",
+  "Still wrong. Are YOU the robot here?",
+  "Okay, this is getting awkward for both of us."
+];
+function r14(body){
+  hideVerify();
+  let count=0, w=0;
+  body.innerHTML='<p class="prompt">Type <strong>"i am definitely human"</strong> three times in a row. No typos. Humans never typo.</p><input type="text" id="a-in" placeholder="i am definitely human" autocomplete="off" autocapitalize="off"><button class="btn big-btn" id="a-go">Affirm</button><p class="hint"></p>';
+  const go=function(){
+    const v=$("a-in").value.trim().toLowerCase();
+    if(v==="i am definitely human"){
+      count++; sfx.ok(); $("a-in").value="";
+      if(count>=3){pass();return;}
+      hint(body,"Affirmation "+count+"/3 accepted. Again.");
+    }else{
+      count=0; w++; sfx.bad(); $("a-in").value="";
+      hint(body,AFFIRM_SNARK[Math.min(w-1,AFFIRM_SNARK.length-1)]);
+    }
+    $("a-in").focus();
+  };
+  $("a-go").onclick=go;
+  $("a-in").addEventListener("keydown",function(e){if(e.key==="Enter")go();});
+}
+
+function r15(body){
+  const word=pick(WORDS);
+  body.innerHTML='<p class="prompt"><strong>FINAL CHECK.</strong> Everything at once. 45 seconds.</p><p class="timer"><span id="g-t">45</span>s</p><div class="cb-area" id="g-area"></div><p class="prompt" style="margin-top:12px">Now type the wavy word:</p><div class="wavy" id="g-wavy"></div><input type="text" id="g-in" placeholder="type it here" autocomplete="off" autocapitalize="off"><p class="hint"></p>';
+  const cb=addDodge($("g-area"),2);
+  wavyWord($("g-wavy"),word);
+  let t=45;
+  timers.push(setInterval(function(){
+    t--;
+    const te=$("g-t"); if(te) te.textContent=t;
+    if(t<=10&&t>0) sfx.tick();
+    if(t<=0) fail("Time up. The robots send their regards.");
+  },1000));
+  setVerify(function(){
+    if(!cb.checked){fail("Checkbox. Check it. It is right there.");return;}
+    if($("g-in").value.trim().toLowerCase()!==word){fail("Wrong word. So close to humanity.");return;}
+    pass();
+  });
+  $("g-in").addEventListener("keydown",function(e){if(e.key==="Enter")$("verify-btn").click();});
+}
+
+/* ---------- engine ---------- */
+const LEVELS=[
+  {render:r1},{render:r2},{render:r3},{render:r4},{render:r5},
+  {render:r6},{render:r7},{render:r8},{render:r9},{render:r10},
+  {render:r11},{render:r12},{render:r13},{render:r14},{render:r15}
+];
+
+function showWin(){
+  show("screen-win");
+  const s=Math.floor((Date.now()-startTime)/1000);
+  $("stat-time").textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+  $("stat-fails").textContent=fails;
+  clearProg();
+}
+function startGame(){
+  startTime=Date.now();
+  fails=0;
+  show("screen-game");
+  renderLevel();
+}
+
+/* ---------- init ---------- */
+$("mute-btn").onclick=function(e){
+  e.stopPropagation();
+  muted=!muted;
+  $("mute-btn").textContent=muted?"🔇":"🔊";
+};
+$("how-btn").onclick=function(){
+  sfx.click();
+  const h=$("how-text");
+  h.style.display=(h.style.display==="block")?"none":"block";
+};
+$("reset-btn").onclick=function(){
+  clearProg(); lvl=0;
+  $("start-label").textContent="Start Verification";
+  sfx.click();
+};
+$("start-btn").onclick=function(){
+  sfx.click();
+  lvl=loadProg();
+  startGame();
+};
+$("again-btn").onclick=function(){
+  sfx.click();
+  lvl=0;
+  startGame();
+};
+(function(){
+  const p=loadProg();
+  if(p>0) $("start-label").textContent="Continue Check "+(p+1)+"/"+TOTAL;
+})();
+</script>
+</body>
+</html>
