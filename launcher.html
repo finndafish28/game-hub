@@ -134,6 +134,11 @@ if ('serviceWorker' in navigator) {
         <span>eaglercraft.html</span>
       </label>
       <label class="ver-card">
+        <input type="radio" name="mcversion" value="uwuclient.html">
+        <b>UwUClient</b>
+        <span>uwuclient.html</span>
+      </label>
+      <label class="ver-card">
         <input type="radio" name="mcversion" value="eaglercraft-26.2.html">
         <b>Eaglercraft 26.2 (zeus)</b>
         <span>eaglercraft-26.2.html</span>
@@ -146,7 +151,7 @@ if ('serviceWorker' in navigator) {
   <section class="card" id="savesSection">
     <h2>💾 Saves <span style="color:#999;font-weight:normal;font-size:.85rem;">(1.8 worlds)</span></h2>
     <div class="warn">⚠️ Close the game tab before managing saves — the game locks its files while running.</div>
-    <div class="note">ℹ️ 26.2 (zeus) stores its saves in an unreadable format — this manager only handles 1.8 worlds for now.</div>
+    <div class="note">ℹ️ 26.2 (zeus) stores its saves in a format this manager can't read — it handles 1.8 worlds for now (EaglercraftX 1.8 and UwUClient share them).</div>
     <div class="row">
       <button id="refreshSavesBtn" class="secondary">🔄 Refresh</button>
       <label class="file-label" for="importFile">📥 Import world</label>
@@ -286,7 +291,8 @@ async function readGameUsername(){
 }
 async function writeGameUsername(username){
   const gz = await gzip(buildProfileNBT(username));
-  localStorage.setItem(PROFILE_KEY, b64encode(gz));
+  const b64 = b64encode(gz);
+  localStorage.setItem(PROFILE_KEY, b64);        // 1.8 namespace (also used by UwUClient)
 }
 </script>
 <script>
@@ -295,7 +301,7 @@ async function writeGameUsername(username){
 const LS_PROFILES = 'eaglerLauncher.profiles';
 const LS_ACTIVE = 'eaglerLauncher.activeProfile';
 const LS_VERSION = 'eaglerLauncher.version';
-const VERSION_FILES = { '1.8':'eaglercraft.html', '26.2':'eaglercraft-26.2.html' };
+const VERSION_FILES = { '1.8':'eaglercraft.html', 'uwu':'uwuclient.html', '26.2':'eaglercraft-26.2.html' };
 
 function loadProfiles(){
   try{ const a = JSON.parse(localStorage.getItem(LS_PROFILES)||'[]'); return Array.isArray(a)?a.filter(p=>p&&USER_RE.test(p.name)):[]; }
@@ -372,7 +378,7 @@ async function play(){
     const active = activeProfileName();
     const profiles = loadProfiles();
     if(active && profiles.some(p=>p.name===active)){
-      await writeGameUsername(active);   // same key for 1.8; harmless if 26.2 ignores it
+      await writeGameUsername(active);   // writes the username into the game's profile storage
     }
     location.href = currentVersion();
   }catch(e){
