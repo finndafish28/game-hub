@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eagler Launcher ⛏️</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#3d7a1e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#e8e8e8; min-height:100vh;
+    background-color:#141414;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.015) 0 2px, transparent 2px 4px);
+  }
+  header {
+    background:#0d0d0d; border-bottom:3px solid #3c8527;
+    padding:16px 20px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:10;
+  }
+  header h1 { font-size:1.5rem; }
+  header a { color:#7cba3f; text-decoration:none; font-size:.95rem; }
+  header a:hover { text-decoration:underline; }
+  main { max-width:720px; margin:0 auto; padding:24px 16px 60px; }
+  section.card {
+    background:#1e1e1e; border:1px solid #333; border-radius:12px;
+    padding:20px; margin-bottom:20px;
+  }
+  section.card h2 { font-size:1.15rem; margin-bottom:14px; color:#7cba3f; }
+  .row { display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  input[type=text] {
+    flex:1; min-width:0; background:#0f0f0f; border:1px solid #444; color:#eee;
+    border-radius:8px; padding:12px; font-size:1rem; min-height:44px;
+  }
+  input[type=text]:focus { outline:none; border-color:#5EBB2B; }
+  button {
+    font-family:inherit; cursor:pointer; border:none; border-radius:8px;
+    padding:12px 18px; font-size:1rem; font-weight:bold; min-height:44px;
+    color:#fff; background:linear-gradient(#6fc53f,#4a9a28);
+    text-shadow:1px 1px 0 rgba(0,0,0,.4);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.25), inset 0 -3px 0 rgba(0,0,0,.3);
+  }
+  button:active { transform:translateY(1px); }
+  button.secondary { background:linear-gradient(#5a5a5a,#3d3d3d); }
+  button.danger { background:linear-gradient(#c0392b,#96281b); }
+  button.small { padding:8px 12px; font-size:.85rem; min-height:38px; }
+  .profile-row {
+    display:flex; align-items:center; gap:10px; padding:10px;
+    background:#262626; border-radius:8px; margin-bottom:8px; border:1px solid #333;
+  }
+  .profile-row.active { border-color:#5EBB2B; }
+  .profile-row label { flex:1; display:flex; align-items:center; gap:10px; cursor:pointer; font-size:1.05rem; }
+  input[type=radio] { width:20px; height:20px; accent-color:#5EBB2B; }
+  .hint { color:#999; font-size:.85rem; margin-top:8px; }
+  .ver-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:520px){ .ver-grid{ grid-template-columns:1fr; } }
+  .ver-card {
+    display:block; background:#262626; border:2px solid #333; border-radius:10px;
+    padding:16px; cursor:pointer; transition:border-color .15s;
+  }
+  .ver-card:has(input:checked){ border-color:#5EBB2B; background:#2a3324; }
+  .ver-card b { display:block; font-size:1.05rem; margin-bottom:4px; }
+  .ver-card span { color:#999; font-size:.8rem; font-family:monospace; }
+  .ver-card input { margin-bottom:8px; }
+  #playBtn {
+    display:block; width:100%; font-size:1.6rem; padding:20px; margin-bottom:20px;
+    letter-spacing:1px;
+  }
+  .warn {
+    background:#3a2c10; border:1px solid #8a6d1f; color:#f0d060;
+    border-radius:8px; padding:12px; margin-bottom:14px; font-size:.9rem;
+  }
+  .note { background:#1a2a3a; border:1px solid #2c5a8a; color:#9ecfff;
+    border-radius:8px; padding:12px; margin-bottom:14px; font-size:.9rem; }
+  .world-row {
+    background:#262626; border:1px solid #333; border-radius:8px;
+    padding:12px; margin-bottom:10px;
+  }
+  .world-row .wname { font-size:1.05rem; font-weight:bold; }
+  .world-row .wmeta { color:#999; font-size:.8rem; font-family:monospace; margin:4px 0 10px; }
+  .world-row .wbtns { display:flex; gap:8px; flex-wrap:wrap; }
+  #status {
+    position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+    background:#000; border:1px solid #5EBB2B; color:#dfffc8; padding:12px 20px;
+    border-radius:10px; font-size:.95rem; display:none; max-width:90vw; z-index:50;
+  }
+  .file-label {
+    display:inline-block; cursor:pointer; border-radius:8px; padding:12px 18px;
+    font-size:1rem; font-weight:bold; min-height:44px; color:#fff;
+    background:linear-gradient(#5a5a5a,#3d3d3d);
+    text-shadow:1px 1px 0 rgba(0,0,0,.4);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.25), inset 0 -3px 0 rgba(0,0,0,.3);
+  }
+  #importFile { display:none; }
+  footer { text-align:center; color:#666; padding:24px; font-size:.85rem; }
+  .empty { color:#777; font-style:italic; padding:8px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>⛏️ Eagler Launcher</h1>
+  <a href="index.html">← Back to Game Hub</a>
+</header>
+<main>
+  <section class="card" id="profilesSection">
+    <h2>👤 Accounts</h2>
+    <div id="profileList"></div>
+    <div class="row">
+      <input type="text" id="newProfileName" maxlength="16" placeholder="New username (3–16: letters, numbers, _)" autocomplete="off">
+      <button id="addProfileBtn">Add</button>
+    </div>
+    <p class="hint" id="gameUsername">Game's stored username: …</p>
+  </section>
+
+  <section class="card" id="versionSection">
+    <h2>📦 Version</h2>
+    <div class="ver-grid" id="versionGrid">
+      <label class="ver-card">
+        <input type="radio" name="mcversion" value="eaglercraft.html">
+        <b>EaglercraftX 1.8</b>
+        <span>eaglercraft.html</span>
+      </label>
+      <label class="ver-card">
+        <input type="radio" name="mcversion" value="eaglercraft-26.2.html">
+        <b>Eaglercraft 26.2 (zeus)</b>
+        <span>eaglercraft-26.2.html</span>
+      </label>
+    </div>
+  </section>
+
+  <button id="playBtn">▶ PLAY</button>
+
+  <section class="card" id="savesSection">
+    <h2>💾 Saves <span style="color:#999;font-weight:normal;font-size:.85rem;">(1.8 worlds)</span></h2>
+    <div class="warn">⚠️ Close the game tab before managing saves — the game locks its files while running.</div>
+    <div class="note">ℹ️ 26.2 (zeus) stores its saves in an unreadable format — this manager only handles 1.8 worlds for now.</div>
+    <div class="row">
+      <button id="refreshSavesBtn" class="secondary">🔄 Refresh</button>
+      <label class="file-label" for="importFile">📥 Import world</label>
+      <input type="file" id="importFile" accept=".json,application/json">
+    </div>
+    <div id="savesList"><p class="empty">Press Refresh to load worlds.</p></div>
+  </section>
+</main>
+<div id="status"></div>
+<footer>made with ⛏️</footer>
+<script>
+'use strict';
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+let statusTimer = null;
+function status(msg, ms=3500){
+  const el = $('status'); el.textContent = msg; el.style.display = 'block';
+  clearTimeout(statusTimer); statusTimer = setTimeout(()=>{ el.style.display='none'; }, ms);
+}
+function fmtSize(n){
+  if(n < 1024) return n + ' B';
+  if(n < 1048576) return (n/1024).toFixed(1) + ' KB';
+  return (n/1048576).toFixed(1) + ' MB';
+}
+const USER_RE = /^[A-Za-z0-9_]{3,16}$/;
+</script>
+<script>
+'use strict';
+/* ================= NBT (big-endian) ================= */
+/* tag = {type:Number, value:...}; compound value = {name: tag}; list value = {elemType, items:[...]} */
+class NBTReader {
+  constructor(u8){ this.dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength); this.p = 0; }
+  u8(){ return this.dv.getUint8(this.p++); }
+  i8(){ return this.dv.getInt8(this.p++); }
+  u16(){ const v=this.dv.getUint16(this.p,false); this.p+=2; return v; }
+  i16(){ const v=this.dv.getInt16(this.p,false); this.p+=2; return v; }
+  i32(){ const v=this.dv.getInt32(this.p,false); this.p+=4; return v; }
+  i64(){ const v=this.dv.getBigInt64(this.p,false); this.p+=8; return v; }
+  f32(){ const v=this.dv.getFloat32(this.p,false); this.p+=4; return v; }
+  f64(){ const v=this.dv.getFloat64(this.p,false); this.p+=8; return v; }
+  bytes(n){ const v=new Uint8Array(this.dv.buffer, this.dv.byteOffset+this.p, n); this.p+=n; return v; }
+  str(){ const n=this.u16(); return new TextDecoder().decode(this.bytes(n)); }
+  tag(t){
+    switch(t){
+      case 0: return null;
+      case 1: return this.i8();
+      case 2: return this.i16();
+      case 3: return this.i32();
+      case 4: return this.i64();
+      case 5: return this.f32();
+      case 6: return this.f64();
+      case 7: { const n=this.i32(); if(n<0) throw new Error('neg len'); return this.bytes(n); }
+      case 8: return this.str();
+      case 9: { const et=this.u8(); const n=this.i32(); if(n<0) throw new Error('neg len'); const a=[]; for(let i=0;i<n;i++) a.push(this.tag(et)); return {elemType:et, items:a}; }
+      case 10: { const o={}; for(;;){ const tt=this.u8(); if(tt===0) break; const nm=this.str(); o[nm]={type:tt, value:this.tag(tt)}; } return o; }
+      case 11: { const n=this.i32(); if(n<0) throw new Error('neg len'); const a=new Int32Array(n); for(let i=0;i<n;i++) a[i]=this.i32(); return a; }
+      default: throw new Error('unknown tag '+t);
+    }
+  }
+  named(){ const t=this.u8(); if(t===0) return null; const n=this.str(); return {name:n, type:t, value:this.tag(t)}; }
+}
+function parseNBT(u8){ return new NBTReader(u8).named(); }
+
+class NBTWriter {
+  constructor(){ this.b = []; }
+  u8(v){ this.b.push(v&255); }
+  i16(v){ v&=65535; this.b.push((v>>>8)&255, v&255); }
+  i32(v){ this.b.push((v>>>24)&255,(v>>>16)&255,(v>>>8)&255,v&255); }
+  i64(v){ let x=BigInt(v); if(x<0n) x+=(1n<<64n); for(let s=56;s>=0;s-=8) this.b.push(Number((x>>BigInt(s))&0xffn)); }
+  f32(v){ const d=new DataView(new ArrayBuffer(4)); d.setFloat32(0,v,false); for(let i=0;i<4;i++) this.b.push(d.getUint8(i)); }
+  f64(v){ const d=new DataView(new ArrayBuffer(8)); d.setFloat64(0,v,false); for(let i=0;i<8;i++) this.b.push(d.getUint8(i)); }
+  bytes(u8){ for(let i=0;i<u8.length;i++) this.b.push(u8[i]); }
+  str(s){ const e=new TextEncoder().encode(s); const n=e.length; this.b.push((n>>>8)&255, n&255); this.bytes(e); }
+  tag(t,v){
+    switch(t){
+      case 1: this.u8(v); break;
+      case 2: this.i16(v); break;
+      case 3: this.i32(v); break;
+      case 4: this.i64(v); break;
+      case 5: this.f32(v); break;
+      case 6: this.f64(v); break;
+      case 7: this.i32(v.length); this.bytes(v); break;
+      case 8: this.str(v); break;
+      case 9: this.u8(v.elemType); this.i32(v.items.length); for(const it of v.items) this.tag(v.elemType, it); break;
+      case 10: for(const k of Object.keys(v)){ const e=v[k]; this.u8(e.type); this.str(k); this.tag(e.type, e.value); } this.u8(0); break;
+      case 11: this.i32(v.length); for(let i=0;i<v.length;i++) this.i32(v[i]); break;
+      default: throw new Error('unknown tag '+t);
+    }
+  }
+  named(name,t,v){ this.u8(t); this.str(name); this.tag(t,v); }
+  out(){ return new Uint8Array(this.b); }
+}
+
+/* ================= gzip / base64 ================= */
+async function gunzip(u8){
+  const s = new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function gzip(u8){
+  const s = new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+function b64encode(u8){
+  let s=''; const CH=0x8000;
+  for(let i=0;i<u8.length;i+=CH) s += String.fromCharCode.apply(null, u8.subarray(i, i+CH));
+  return btoa(s);
+}
+function b64decode(b64){
+  const s = atob(b64); const u = new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++) u[i] = s.charCodeAt(i);
+  return u;
+}
+
+/* ================= profile NBT ================= */
+const PROFILE_KEY = '_eaglercraftX.p';
+function buildProfileNBT(username){
+  const w = new NBTWriter();
+  w.named('', 10, {
+    presetSkin:{type:3,value:0},
+    customSkin:{type:3,value:-1},
+    presetCape:{type:3,value:0},
+    customCape:{type:3,value:-1},
+    username:{type:8,value:username},
+    skins:{type:9,value:{elemType:10,items:[]}},
+    capes:{type:9,value:{elemType:10,items:[]}}
+  });
+  return w.out();
+}
+async function readGameUsername(){
+  const b64 = localStorage.getItem(PROFILE_KEY);
+  if(!b64) return null;
+  try{
+    const nbt = parseNBT(await gunzip(b64decode(b64)));
+    const u = nbt && nbt.value && nbt.value.username;
+    return (u && u.type===8) ? u.value : null;
+  }catch(e){ return null; }
+}
+async function writeGameUsername(username){
+  const gz = await gzip(buildProfileNBT(username));
+  localStorage.setItem(PROFILE_KEY, b64encode(gz));
+}
+</script>
+<script>
+'use strict';
+/* ================= profiles ================= */
+const LS_PROFILES = 'eaglerLauncher.profiles';
+const LS_ACTIVE = 'eaglerLauncher.activeProfile';
+const LS_VERSION = 'eaglerLauncher.version';
+const VERSION_FILES = { '1.8':'eaglercraft.html', '26.2':'eaglercraft-26.2.html' };
+
+function loadProfiles(){
+  try{ const a = JSON.parse(localStorage.getItem(LS_PROFILES)||'[]'); return Array.isArray(a)?a.filter(p=>p&&USER_RE.test(p.name)):[]; }
+  catch(e){ return []; }
+}
+function saveProfiles(a){ localStorage.setItem(LS_PROFILES, JSON.stringify(a)); }
+function activeProfileName(){ return localStorage.getItem(LS_ACTIVE); }
+function setActiveProfile(n){ if(n) localStorage.setItem(LS_ACTIVE,n); else localStorage.removeItem(LS_ACTIVE); }
+
+function renderProfiles(){
+  const list = $('profileList'); list.innerHTML = '';
+  const profiles = loadProfiles();
+  let active = activeProfileName();
+  if(active && !profiles.some(p=>p.name===active)){ setActiveProfile(null); active = null; }
+  if(!profiles.length){ list.innerHTML = '<p class="empty">No accounts yet — add your Minecraft username above.</p>'; }
+  for(const p of profiles){
+    const row = document.createElement('div');
+    row.className = 'profile-row' + (p.name===active ? ' active' : '');
+    const lab = document.createElement('label');
+    const radio = document.createElement('input');
+    radio.type='radio'; radio.name='profile'; radio.value=p.name; radio.checked = (p.name===active);
+    radio.addEventListener('change', ()=>{ setActiveProfile(p.name); renderProfiles(); });
+    const span = document.createElement('span'); span.textContent = p.name;
+    lab.appendChild(radio); lab.appendChild(span);
+    const del = document.createElement('button');
+    del.className='danger small'; del.textContent='Delete';
+    del.addEventListener('click', ()=>{
+      if(!confirm('Delete account "'+p.name+'"?')) return;
+      saveProfiles(loadProfiles().filter(x=>x.name!==p.name));
+      if(activeProfileName()===p.name) setActiveProfile(null);
+      renderProfiles(); status('Account deleted.');
+    });
+    row.appendChild(lab); row.appendChild(del);
+    list.appendChild(row);
+  }
+}
+function addProfile(){
+  const inp = $('newProfileName');
+  const name = inp.value.trim();
+  if(!USER_RE.test(name)){ status('Username must be 3–16 chars: letters, numbers, _.'); return; }
+  const profiles = loadProfiles();
+  if(profiles.some(p=>p.name.toLowerCase()===name.toLowerCase())){ status('That username is already added.'); return; }
+  profiles.push({name});
+  saveProfiles(profiles);
+  if(!activeProfileName()) setActiveProfile(name);
+  inp.value='';
+  renderProfiles(); status('Account "'+name+'" added.');
+}
+async function refreshGameUsername(){
+  const el = $('gameUsername');
+  try{
+    const u = await readGameUsername();
+    el.textContent = "Game's stored username: " + (u ? u : '(none yet)');
+  }catch(e){ el.textContent = "Game's stored username: (unreadable)"; }
+}
+
+/* ================= versions ================= */
+function currentVersion(){
+  const r = document.querySelector('input[name=mcversion]:checked');
+  return r ? r.value : 'eaglercraft.html';
+}
+function initVersions(){
+  const saved = localStorage.getItem(LS_VERSION) || 'eaglercraft.html';
+  const radios = document.querySelectorAll('input[name=mcversion]');
+  let matched = false;
+  radios.forEach(r=>{ if(r.value===saved){ r.checked=true; matched=true; } r.addEventListener('change',()=>localStorage.setItem(LS_VERSION, r.value)); });
+  if(!matched) radios[0].checked = true;
+}
+
+/* ================= play ================= */
+async function play(){
+  const btn = $('playBtn'); btn.disabled = true; btn.textContent = '⏳ Launching…';
+  try{
+    const active = activeProfileName();
+    const profiles = loadProfiles();
+    if(active && profiles.some(p=>p.name===active)){
+      await writeGameUsername(active);   // same key for 1.8; harmless if 26.2 ignores it
+    }
+    location.href = currentVersion();
+  }catch(e){
+    btn.disabled = false; btn.textContent = '▶ PLAY';
+    status('Launch failed: ' + e.message);
+  }
+}
+
+/* ================= saves (1.8 worlds) ================= */
+const WORLDS_DB = '_net_lax1dude_eaglercraft_v1_8_internal_PlatformFilesystem_1_8_8_worlds';
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    try{
+      const r = indexedDB.open(WORLDS_DB);
+      r.onsuccess = ()=>res(r.result);
+      r.onerror = ()=>rej(r.error||new Error('open failed'));
+      r.onblocked = ()=>rej(new Error('database blocked (game tab open?)'));
+    }catch(e){ rej(e); }
+  });
+}
+function txDone(tx){
+  return new Promise((res,rej)=>{ tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error||new Error('tx failed')); tx.onabort=()=>rej(tx.error||new Error('tx aborted')); });
+}
+function idbGetAll(db){
+  return new Promise((res,rej)=>{
+    const out=[]; const rq = db.transaction('filesystem','readonly').objectStore('filesystem').openCursor();
+    rq.onsuccess = ()=>{ const c=rq.result; if(c){ out.push(c.value); c.continue(); } else res(out); };
+    rq.onerror = ()=>rej(rq.error);
+  });
+}
+function idbGetAllKeys(db){
+  return new Promise((res,rej)=>{
+    const rq = db.transaction('filesystem','readonly').objectStore('filesystem').getAllKeys();
+    rq.onsuccess = ()=>res(rq.result||[]); rq.onerror = ()=>rej(rq.error);
+  });
+}
+async function readWorldsList(db){
+  const row = await new Promise((res,rej)=>{
+    const q = db.transaction('filesystem','readonly').objectStore('filesystem').get('worlds_list.txt');
+    q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
+  });
+  if(!row) return [];
+  return new TextDecoder().decode(row.data).split('\n').map(s=>s.trim()).filter(Boolean);
+}
+async function levelDisplayName(levelDatU8, fallback){
+  try{
+    const nbt = parseNBT(await gunzip(levelDatU8));
+    const d = nbt && nbt.value && nbt.value.Data;
+    if(d && d.type===10 && d.value.LevelName && d.value.LevelName.type===8) return d.value.LevelName.value;
+  }catch(e){}
+  return fallback;
+}
+async function loadWorlds(){
+  const list = $('savesList');
+  list.innerHTML = '<p class="empty">Loading…</p>';
+  let db;
+  try{
+    db = await idbOpen();
+    const rows = await idbGetAll(db);
+    const byPath = new Map(rows.map(r=>[String(r.path), r]));
+    const folders = await readWorldsList(db);
+    // include folders present on disk but missing from the list
+    for(const r of rows){
+      const m = /^worlds\/([^\/]+)\//.exec(String(r.path));
+      if(m && !folders.includes(m[1])) folders.push(m[1]);
+    }
+    if(!folders.length){ list.innerHTML = '<p class="empty">No 1.8 worlds found. Create one in-game first.</p>'; return; }
+    list.innerHTML = '';
+    for(const f of folders){
+      const prefix = 'worlds/'+f+'/';
+      let size = 0;
+      for(const r of rows) if(String(r.path).startsWith(prefix)) size += (r.data ? r.data.byteLength : 0);
+      const lvl = byPath.get(prefix+'level.dat');
+      const display = lvl ? await levelDisplayName(new Uint8Array(lvl.data), f) : f;
+      const row = document.createElement('div'); row.className='world-row';
+      const nm = document.createElement('div'); nm.className='wname'; nm.textContent = display;
+      const meta = document.createElement('div'); meta.className='wmeta'; meta.textContent = 'folder: '+f+' · '+fmtSize(size);
+      const btns = document.createElement('div'); btns.className='wbtns';
+      const bRename = document.createElement('button'); bRename.className='secondary small'; bRename.textContent='✏️ Rename';
+      bRename.addEventListener('click', ()=>renameWorldUI(f, display));
+      const bExp = document.createElement('button'); bExp.className='secondary small'; bExp.textContent='📤 Export';
+      bExp.addEventListener('click', ()=>exportWorldUI(f));
+      const bDel = document.createElement('button'); bDel.className='danger small'; bDel.textContent='🗑 Delete';
+      bDel.addEventListener('click', ()=>deleteWorldUI(f));
+      btns.appendChild(bRename); btns.appendChild(bExp); btns.appendChild(bDel);
+      row.appendChild(nm); row.appendChild(meta); row.appendChild(btns);
+      list.appendChild(row);
+    }
+  }catch(e){
+    list.innerHTML = '';
+    status('Could not read saves: ' + e.message + ' — is the game tab closed?');
+  }finally{ if(db) db.close(); }
+}
+async function renameWorldUI(folder, oldDisplay){
+  const nn = prompt('New world name:', oldDisplay);
+  if(nn===null) return;
+  const name = nn.trim();
+  if(!name){ status('Name cannot be empty.'); return; }
+  let db;
+  try{
+    db = await idbOpen();
+    const tx = db.transaction('filesystem','readwrite'); const st = tx.objectStore('filesystem');
+    const row = await new Promise((res,rej)=>{ const q=st.get('worlds/'+folder+'/level.dat'); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
+    if(!row) throw new Error('level.dat not found');
+    const nbt = parseNBT(await gunzip(new Uint8Array(row.data)));
+    if(!nbt.value.Data || nbt.value.Data.type!==10) throw new Error('level.dat has no Data compound');
+    nbt.value.Data.value.LevelName = {type:8, value:name};
+    const w = new NBTWriter(); w.named(nbt.name, nbt.type, nbt.value);
+    st.put({path:row.path, data:(await gzip(w.out())).buffer});
+    await txDone(tx);
+    status('World renamed to "'+name+'".');
+    loadWorlds();
+  }catch(e){ status('Rename failed: '+e.message); }
+  finally{ if(db) db.close(); }
+}
+async function deleteWorldUI(folder){
+  if(!confirm('Delete world "'+folder+'" forever? This cannot be undone.')) return;
+  let db;
+  try{
+    db = await idbOpen();
+    const tx = db.transaction('filesystem','readwrite'); const st = tx.objectStore('filesystem');
+    const keys = await new Promise((res,rej)=>{ const q=st.getAllKeys(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>rej(q.error); });
+    const prefix = 'worlds/'+folder+'/';
+    for(const k of keys) if(String(k).startsWith(prefix)) st.delete(k);
+    const listRow = await new Promise((res,rej)=>{ const q=st.get('worlds_list.txt'); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
+    if(listRow){
+      const lines = new TextDecoder().decode(listRow.data).split('\n').map(s=>s.trim()).filter(s=>s && s!==folder);
+      st.put({path:'worlds_list.txt', data:new TextEncoder().encode(lines.length?lines.join('\n')+'\n':'').buffer});
+    }
+    await txDone(tx);
+    status('World "'+folder+'" deleted.');
+    loadWorlds();
+  }catch(e){ status('Delete failed: '+e.message); }
+  finally{ if(db) db.close(); }
+}
+async function exportWorldUI(folder){
+  let db;
+  try{
+    db = await idbOpen();
+    const rows = await idbGetAll(db);
+    const prefix = 'worlds/'+folder+'/';
+    const files = rows.filter(r=>String(r.path).startsWith(prefix))
+      .map(r=>({path:String(r.path), data:b64encode(new Uint8Array(r.data))}));
+    if(!files.length){ status('No files found for "'+folder+'".'); return; }
+    const payload = {game:'eaglercraftX-1.8', folder, files};
+    const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = folder + '.eaglerworld.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    status('Exported "'+folder+'" ('+files.length+' files).');
+  }catch(e){ status('Export failed: '+e.message); }
+  finally{ if(db) db.close(); }
+}
+async function importWorldFile(file){
+  let payload;
+  try{ payload = JSON.parse(await file.text()); }
+  catch(e){ status('That file is not valid JSON.'); return; }
+  if(!payload || payload.game!=='eaglercraftX-1.8' || typeof payload.folder!=='string' || !Array.isArray(payload.files)){
+    status('Not a valid .eaglerworld.json file.'); return;
+  }
+  const folder = payload.folder;
+  if(!/^[A-Za-z0-9_\- ]{1,64}$/.test(folder)){ status('Bad folder name in file.'); return; }
+  let db;
+  try{
+    db = await idbOpen();
+    const keys = await idbGetAllKeys(db);
+    const prefix = 'worlds/'+folder+'/';
+    const exists = keys.some(k=>String(k).startsWith(prefix));
+    const tx = db.transaction('filesystem','readwrite'); const st = tx.objectStore('filesystem');
+    if(exists){
+      if(!confirm('World "'+folder+'" already exists. Overwrite it?')) return;
+      for(const k of keys) if(String(k).startsWith(prefix)) st.delete(k);
+    }
+    for(const f of payload.files){
+      if(typeof f.path!=='string' || typeof f.data!=='string') throw new Error('corrupt file entry');
+      st.put({path:f.path, data:b64decode(f.data).buffer});
+    }
+    const listRow = await new Promise((res,rej)=>{ const q=st.get('worlds_list.txt'); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); });
+    let lines = listRow ? new TextDecoder().decode(listRow.data).split('\n').map(s=>s.trim()).filter(Boolean) : [];
+    if(!lines.includes(folder)) lines.push(folder);
+    st.put({path:'worlds_list.txt', data:new TextEncoder().encode(lines.join('\n')+'\n').buffer});
+    await txDone(tx);
+    status('Imported world "'+folder+'" ('+payload.files.length+' files).');
+    loadWorlds();
+  }catch(e){ status('Import failed: '+e.message); }
+  finally{ if(db) db.close(); }
+}
+
+/* ================= init ================= */
+$('addProfileBtn').addEventListener('click', addProfile);
+$('newProfileName').addEventListener('keydown', e=>{ if(e.key==='Enter') addProfile(); });
+$('playBtn').addEventListener('click', play);
+$('refreshSavesBtn').addEventListener('click', loadWorlds);
+$('importFile').addEventListener('change', e=>{ if(e.target.files[0]) importWorldFile(e.target.files[0]); e.target.value=''; });
+renderProfiles();
+initVersions();
+refreshGameUsername();
+loadWorlds();
+</script>
+</body>
+</html>
