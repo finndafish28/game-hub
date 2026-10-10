@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎵 Good Kid Player</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: linear-gradient(160deg, #1a1b3a, #2d1b4e); color: #fff;
+         font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+         min-height: 100vh; display: flex; flex-direction: column; }
+  header { text-align: center; padding: 1.2rem 1rem .4rem; }
+  header h1 { font-size: 1.5rem; }
+  header h1 .star { color: #ffd54a; }
+  header p { color: #b9a8e8; font-size: .8rem; margin-top: .2rem; }
+  #nowPlaying { text-align: center; padding: .7rem 1rem; color: #ffd54a;
+                font-size: 1rem; min-height: 2.4rem; font-weight: 600; }
+  #trackList { list-style: none; padding: 0 .9rem; overflow-y: auto; flex: 1; max-width: 40rem; margin: 0 auto; width: 100%; }
+  #trackList li { background: rgba(255,255,255,.07); border-radius: 14px;
+                  margin-bottom: .55rem; padding: .9rem 1rem; cursor: pointer;
+                  display: flex; align-items: center; gap: .8rem; font-size: 1.02rem; }
+  #trackList li:active { background: rgba(255,255,255,.16); }
+  #trackList li.active { background: rgba(255,213,74,.22); border: 2px solid #ffd54a; }
+  #trackList li .ep { font-size: .68rem; background: #6c5ce7; border-radius: 8px;
+                      padding: .15rem .5rem; color: #fff; flex-shrink: 0; }
+  #trackList li .name { flex: 1; }
+  #controls { position: sticky; bottom: 0; padding: .9rem 1rem calc(.9rem + env(safe-area-inset-bottom));
+              background: rgba(20,18,40,.92);
+              display: flex; align-items: center; justify-content: center; gap: 1.1rem; }
+  #controls button { border: none; cursor: pointer; color: #fff; }
+  #prevBtn, #nextBtn { background: #6c5ce7; width: 3.2rem; height: 3.2rem; border-radius: 50%; font-size: 1.3rem; }
+  #playBtn { background: #ffd54a; color: #3a2c00; width: 4.2rem; height: 4.2rem; border-radius: 50%; font-size: 1.7rem; }
+  #seekRow { padding: 0 1.2rem .2rem; max-width: 40rem; margin: 0 auto; width: 100%; }
+  #seek { width: 100%; accent-color: #ffd54a; }
+  #timeRow { display: flex; justify-content: space-between; padding: 0 1.3rem .6rem;
+             font-size: .75rem; color: #b9a8e8; max-width: 40rem; margin: 0 auto; width: 100%; }
+  #credit { text-align: center; font-size: .7rem; color: #8f83c4; padding: .5rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="star">★</span> Good Kid Player <span class="star">★</span></h1>
+  <p>Good Kid 3 &amp; 4</p>
+</header>
+<div id="nowPlaying">Tap a song to play 🎶</div>
+<ul id="trackList"></ul>
+<div id="seekRow"><input type="range" id="seek" value="0" min="0" max="100" step="0.1"></div>
+<div id="timeRow"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
+<div id="controls">
+  <button id="prevBtn">⏮</button>
+  <button id="playBtn">▶</button>
+  <button id="nextBtn">⏭</button>
+</div>
+<div id="credit">Music: Good Kid (DMCA-free for creators) &bull; goodkidofficial.com<br><a href="GoodKidPlayer.apk" download style="color:#ffd54a;">📱 Prefer an app? Download the Android APK</a></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+'use strict';
+const TRACKS = [
+  { t: "No Time To Explain",     ep: "GK3", f: "music/01-no-time-to-explain.mp3" },
+  { t: "Mimi's Delivery Service", ep: "GK3", f: "music/02-mimis-delivery-service.mp3" },
+  { t: "Osmosis",                ep: "GK3", f: "music/03-osmosis.mp3" },
+  { t: "First Rate Town",        ep: "GK3", f: "music/04-first-rate-town.mp3" },
+  { t: "Orbit",                  ep: "GK3", f: "music/05-orbit.mp3" },
+  { t: "Madeleine",              ep: "GK3", f: "music/06-madeleine.mp3" },
+  { t: "Ground",                 ep: "GK3", f: "music/07-ground.mp3" },
+  { t: "Bubbly",                 ep: "GK4", f: "music/08-bubbly.mp3" },
+  { t: "Summer",                 ep: "GK4", f: "music/09-summer.mp3" },
+  { t: "Break",                  ep: "GK4", f: "music/10-break.mp3" },
+  { t: "Dance Class",            ep: "GK4", f: "music/11-dance-class.mp3" },
+  { t: "Premier Inn",            ep: "GK4", f: "music/12-premier-inn.mp3" },
+];
+const audio = document.getElementById('audio');
+const listEl = document.getElementById('trackList');
+const nowEl = document.getElementById('nowPlaying');
+const playBtn = document.getElementById('playBtn');
+const seek = document.getElementById('seek');
+let cur = -1;
+
+TRACKS.forEach((tr, i) => {
+  const li = document.createElement('li');
+  const ep = document.createElement('span'); ep.className = 'ep'; ep.textContent = tr.ep;
+  const nm = document.createElement('span'); nm.className = 'name'; nm.textContent = tr.t;
+  li.appendChild(ep); li.appendChild(nm);
+  li.addEventListener('click', () => play(i));
+  listEl.appendChild(li);
+});
+
+function fmt(s){ if(!isFinite(s)) return '0:00'; s=Math.floor(s);
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+function play(i){
+  cur = (i + TRACKS.length) % TRACKS.length;
+  [...listEl.children].forEach((li,k) => li.classList.toggle('active', k === cur));
+  listEl.children[cur].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  audio.src = TRACKS[cur].f;
+  audio.play();
+  nowEl.textContent = '▶ ' + TRACKS[cur].t;
+  playBtn.textContent = '⏸';
+}
+function toggle(){
+  if (cur < 0) { play(0); return; }
+  if (audio.paused) { audio.play(); playBtn.textContent = '⏸'; }
+  else { audio.pause(); playBtn.textContent = '▶'; }
+}
+playBtn.addEventListener('click', toggle);
+document.getElementById('prevBtn').addEventListener('click', () => play(cur < 0 ? 0 : cur - 1));
+document.getElementById('nextBtn').addEventListener('click', () => play(cur < 0 ? 0 : cur + 1));
+audio.addEventListener('ended', () => play(cur + 1));
+audio.addEventListener('timeupdate', () => {
+  if (audio.duration) seek.value = (audio.currentTime / audio.duration) * 100;
+  document.getElementById('tCur').textContent = fmt(audio.currentTime);
+  document.getElementById('tDur').textContent = fmt(audio.duration);
+});
+seek.addEventListener('input', () => {
+  if (audio.duration) audio.currentTime = (seek.value / 100) * audio.duration;
+});
+</script>
+</body>
+</html>
