@@ -6,96 +6,138 @@
 <title>Five Nights at Fluffy's</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: linear-gradient(160deg, #141433 0%, #23234d 45%, #3a2358 100%);
-    color: #f0eaff;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
+  :root {
+    --bg1: #141433; --bg2: #23234d; --bg3: #3a2358;
+    --ink: #f0eaff; --dim: #a0a0c0; --accent: #6c5ce7; --accent-dk: #4a3fb3;
+    --gold: #ffeaa7; --danger: #ff7675;
   }
+  body.scary {
+    --bg1: #030303; --bg2: #0d0202; --bg3: #1c0606;
+    --ink: #e8d5d5; --dim: #8a6f6f; --accent: #8b0000; --accent-dk: #4d0000;
+    --gold: #ffb3b3; --danger: #ff2222;
+  }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 45%, var(--bg3) 100%);
+    color: var(--ink); min-height: 100vh; display: flex; justify-content: center; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 60;
+    background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,.5) 100%); }
+  body.scary #vignette {
+    background: radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,.92) 100%); }
+  #grain { position: fixed; inset: 0; pointer-events: none; z-index: 61; opacity: .05; mix-blend-mode: overlay;
+    background-image: repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 3px); }
   #app { width: 100%; max-width: 860px; padding: 12px; display: flex; flex-direction: column; min-height: 100vh; }
+  body.shake #app { animation: shake .45s linear infinite; }
+  @keyframes shake {
+    0%,100% { transform: translate(0,0); } 20% { transform: translate(-9px,5px) rotate(-.6deg); }
+    40% { transform: translate(8px,-6px) rotate(.6deg); } 60% { transform: translate(-7px,-4px); }
+    80% { transform: translate(6px,6px) rotate(-.4deg); } }
   .screen { display: none; animation: fadeIn .35s ease; flex: 1; }
   .screen.active { display: flex; flex-direction: column; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  h1 { font-size: clamp(30px, 7vw, 54px); text-align: center; margin: 18px 0 4px; text-shadow: 0 3px 0 #5b3a8c; }
+  h1 { font-size: clamp(30px, 7vw, 54px); text-align: center; margin: 18px 0 4px;
+    text-shadow: 0 3px 0 var(--accent-dk); }
+  body.scary h1 { text-shadow: 0 0 24px rgba(255,0,0,.55), 0 3px 0 #000; letter-spacing: 2px; }
   h2 { text-align: center; }
   .tagline { text-align: center; opacity: .85; margin-bottom: 24px; font-size: 17px; }
-  .menu { display: flex; flex-direction: column; gap: 10px; align-items: stretch; max-width: 420px; margin: 0 auto; width: 100%; }
-  .bigbtn {
-    min-height: 58px; font-size: 19px; font-weight: 700; color: #fff;
-    background: #6c5ce7; border: none; border-radius: 18px;
-    padding: 12px 20px; cursor: pointer; box-shadow: 0 4px 0 #4a3fb3;
-    transition: transform .06s;
-  }
-  .bigbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #4a3fb3; }
+  .menu { display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+    max-width: 420px; margin: 0 auto; width: 100%; }
+  .bigbtn { min-height: 58px; font-size: 19px; font-weight: 700; color: #fff;
+    background: var(--accent); border: none; border-radius: 18px; padding: 12px 20px;
+    cursor: pointer; box-shadow: 0 4px 0 var(--accent-dk); transition: transform .06s; }
+  .bigbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--accent-dk); }
   .bigbtn:disabled { background: #4a4a6a; box-shadow: 0 4px 0 #33334d; opacity: .6; cursor: not-allowed; }
   .bigbtn.warn { background: #ff9f68; box-shadow: 0 4px 0 #c96a35; }
+  body.scary .bigbtn.warn { background: #a31212; box-shadow: 0 4px 0 #4d0000; }
   .bigbtn.on { background: #00b894; box-shadow: 0 4px 0 #007a5e; }
+  .bigbtn.sel { outline: 3px solid var(--gold); }
+  .moderow { display: flex; gap: 10px; }
+  .moderow .bigbtn { flex: 1; font-size: 17px; min-height: 64px; }
   .panel { background: rgba(255,255,255,.07); border-radius: 18px; padding: 14px 16px; margin-top: 12px; }
+  body.scary .panel { background: rgba(120,0,0,.12); border: 1px solid rgba(255,0,0,.25); }
   .panel p { line-height: 1.55; }
   .nightgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
   .nightgrid .bigbtn { min-height: 52px; font-size: 17px; padding: 8px; }
-  /* intro */
-  #memo-text { background: #fdf6e3; color: #4a3b2a; border-radius: 16px; padding: 18px; min-height: 150px;
-    font-size: 17px; line-height: 1.6; white-space: pre-wrap; box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+  #memo-text { background: #fdf6e3; color: #4a3b2a; border-radius: 16px; padding: 18px;
+    min-height: 170px; font-size: 17px; line-height: 1.6; white-space: pre-wrap;
+    box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+  body.scary #memo-text { background: #160c0c; color: #d8b8b8; box-shadow: 0 4px 0 #000;
+    border: 1px solid rgba(255,0,0,.3); font-family: "Courier New", monospace; }
   #memo-from { text-align: right; font-style: italic; margin-top: 8px; opacity: .8; }
-  /* game top bar */
-  #topbar { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; font-size: 20px; font-weight: 700; }
-  #btn-mute { background: rgba(255,255,255,.12); border: none; border-radius: 12px; font-size: 22px; padding: 6px 12px; cursor: pointer; color: #fff; }
-  /* office */
+  #topbar { display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 4px; font-size: 20px; font-weight: 700; }
+  #btn-mute { background: rgba(255,255,255,.12); border: none; border-radius: 12px;
+    font-size: 22px; padding: 6px 12px; cursor: pointer; color: #fff; }
   #stage { position: relative; flex: 1; display: flex; flex-direction: column; }
   #office { display: flex; gap: 8px; align-items: stretch; }
-  .doorway { flex: 1; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,.25);
-    border-radius: 18px; padding: 10px; position: relative; min-height: 300px; justify-content: flex-end; }
+  .doorway { flex: 1; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,.35);
+    border-radius: 18px; padding: 10px; position: relative; min-height: 300px; justify-content: flex-end;
+    border: 1px solid rgba(255,255,255,.08); }
+  body.scary .doorway { background: rgba(0,0,0,.65); border-color: rgba(255,0,0,.18); }
   .doorway .peek { font-size: 52px; text-align: center; min-height: 64px; }
-  .doorway .doorlabel { text-align: center; font-size: 44px; margin-bottom: 4px; }
-  .doorway .bigbtn { font-size: 16px; min-height: 54px; padding: 8px 6px; }
+  .doorway .doorlabel { text-align: center; font-size: 15px; font-weight: 800; color: var(--dim);
+    letter-spacing: 3px; margin-bottom: 4px; }
+  .doorway .bigbtn { font-size: 15px; min-height: 54px; padding: 8px 6px; }
   #desk { flex: 1.4; background: rgba(255,255,255,.06); border-radius: 18px; padding: 12px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 300px; }
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; min-height: 300px; }
+  body.scary #desk { background: rgba(0,0,0,.5); }
   #desk .deskd { font-size: 54px; }
-  #office-msg { margin-top: 12px; font-size: 16px; font-style: italic; color: #ffeaa7; min-height: 48px; }
-  /* power */
+  #office-msg { margin-top: 12px; font-size: 16px; font-style: italic; color: var(--gold); min-height: 48px; }
   #powerbar-wrap { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   #powerbar { flex: 1; height: 22px; background: rgba(0,0,0,.4); border-radius: 12px; overflow: hidden; }
-  #powerfill { height: 100%; width: 100%; border-radius: 12px; background: linear-gradient(90deg,#00b894,#55efc4); transition: width .5s; }
+  #powerfill { height: 100%; width: 100%; border-radius: 12px;
+    background: linear-gradient(90deg,#00b894,#55efc4); transition: width .5s; }
   #powerpct { font-weight: 700; min-width: 52px; text-align: right; }
   #usage-pips { display: flex; gap: 6px; }
-  .pip { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.15); font-size: 11px;
-    display: flex; align-items: center; justify-content: center; }
+  .pip { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.15);
+    font-size: 11px; display: flex; align-items: center; justify-content: center; }
   .pip.lit { background: #fdcb6e; box-shadow: 0 0 8px #fdcb6e; }
-  /* bottom bar */
+  body.scary .pip.lit { background: #ff2222; box-shadow: 0 0 8px #ff2222; }
   #bottombar { display: flex; justify-content: center; margin: 10px 0 4px; }
-  /* cameras */
   #cams-view { display: flex; flex-direction: column; gap: 8px; }
   #room-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-  #room-list .bigbtn { font-size: 15px; min-height: 48px; padding: 8px 12px; }
+  #room-list .bigbtn { font-size: 14px; min-height: 48px; padding: 8px 12px; }
   #room-list .bigbtn.sel { background: #00b894; box-shadow: 0 4px 0 #007a5e; }
   #cam-feed { position: relative; background: #0c0c22; border-radius: 18px; min-height: 260px;
-    overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
-  #cam-static { position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    overflow: hidden; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 16px; }
+  body.scary #cam-feed { background: #050505; }
+  #cam-static { position: absolute; inset: 0; pointer-events: none; opacity: .45;
     background: repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 2px, transparent 2px 4px);
     animation: staticShift .25s steps(2) infinite; }
+  body.scary #cam-static { opacity: .8; animation-duration: .12s; }
   @keyframes staticShift { 0% { transform: translateY(0); } 100% { transform: translateY(4px); } }
-  #cam-room-name { font-size: 22px; font-weight: 800; z-index: 1; background: rgba(0,0,0,.5);
-    padding: 4px 14px; border-radius: 12px; margin-bottom: 10px; }
+  #cam-room-name { font-size: 20px; font-weight: 800; z-index: 1; background: rgba(0,0,0,.5);
+    padding: 4px 14px; border-radius: 12px; margin-bottom: 10px; font-family: "Courier New", monospace; }
   #cam-emoji { font-size: 52px; z-index: 1; line-height: 1.4; text-align: center; }
-  #cam-gag { z-index: 1; font-style: italic; color: #a29bfe; text-align: center; padding: 0 12px; }
-  #cam-tag { position: absolute; top: 8px; right: 12px; z-index: 1; font-size: 13px; color: #ff7675; font-weight: 700; }
-  /* blackout */
+  #cam-gag { z-index: 1; font-style: italic; color: var(--dim); text-align: center; padding: 0 12px; }
+  #cam-tag { position: absolute; top: 8px; right: 12px; z-index: 1; font-size: 13px;
+    color: var(--danger); font-weight: 700; font-family: "Courier New", monospace; }
+  .corrupt { display: inline-block; filter: grayscale(.75) brightness(.55) contrast(1.9);
+    text-shadow: 0 0 22px rgba(255,0,0,.9); animation: twitch 1.1s steps(3) infinite; }
+  @keyframes twitch { 0%,100% { transform: translate(0,0); } 33% { transform: translate(-2px,1px); }
+    66% { transform: translate(2px,-2px); } }
   #blackout { position: absolute; inset: 0; background: rgba(2,2,10,.96); border-radius: 18px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; text-align: center; padding: 20px; }
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 5; text-align: center; padding: 20px; }
   #blackout .zzz { font-size: 60px; }
-  /* end screens */
   .endscreen { align-items: center; justify-content: center; text-align: center; gap: 10px; }
-  #hug-emoji { font-size: 96px; animation: hugpulse 1.2s ease infinite; }
+  #caught-emoji { font-size: 96px; animation: hugpulse 1.2s ease infinite; line-height: 1.2; }
   @keyframes hugpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
-  .pay { font-size: 22px; font-weight: 700; color: #ffeaa7; }
+  body.scary #caught-emoji { animation: scarepulse .5s steps(2) infinite; }
+  @keyframes scarepulse { 0%,100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.25) rotate(2deg); } }
+  .pay { font-size: 22px; font-weight: 700; color: var(--gold); }
+  #jumpscare { position: fixed; inset: 0; background: #000; z-index: 100;
+    display: flex; align-items: center; justify-content: center; }
+  #jumpscare[hidden] { display: none; }
+  #scare-face { font-size: 42vmin; line-height: 1; animation: scarezoom .12s steps(2) infinite; }
+  @keyframes scarezoom { 0% { transform: scale(1) rotate(-4deg); } 100% { transform: scale(1.4) rotate(4deg); } }
   footer { text-align: center; opacity: .6; font-size: 14px; padding: 14px 0 6px; }
 </style>
 </head>
 <body>
+<div id="vignette"></div><div id="grain"></div>
+<div id="jumpscare" hidden><div id="scare-face"></div></div>
 <div id="app">
 
   <!-- TITLE -->
@@ -103,6 +145,10 @@
     <h1>🧸 Five Nights at Fluffy's</h1>
     <p class="tagline">The plushies are awake… and they LOVE hugs. Survive 12AM → 6AM!</p>
     <div class="menu">
+      <div class="moderow">
+        <button id="btn-mode-silly" class="bigbtn sel">😄 Silly</button>
+        <button id="btn-mode-scary" class="bigbtn">😱 Scary</button>
+      </div>
       <button id="btn-newgame" class="bigbtn">🌙 New Game</button>
       <button id="btn-nightselect" class="bigbtn">🗓️ Night Select</button>
       <button id="btn-howto" class="bigbtn">❓ How to Play</button>
@@ -119,11 +165,10 @@
     </div>
     <div id="howto-panel" class="panel" hidden>
       <p>🕛 <b>Goal:</b> survive as night guard from <b>12AM to 6AM</b>.</p>
-      <p>🐰🐶🧸 The plushie mascots roam the playhouse at night looking for hugs. Track them on the <b>cameras</b>.</p>
-      <p>🚪 <b>Doors</b> keep plushies out — but they drain power. <b>Lights</b> let you peek into the hallways.</p>
-      <p>👂 Hear tiny pitter-patters? Something cute is very close to your office…</p>
-      <p>🔋 If power hits <b>0%</b>, the doors open and the lights die. The plushies <i>will</i> tuck you in.</p>
-      <p>🤗 If a plushie reaches your office with the door open… <b>HUG.</b></p>
+      <p>🐰🐶🧸 The mascots roam at night. Track them on the <b>cameras</b> (Cam 01–07).</p>
+      <p>🚪 <b>Doors</b> keep them out — but drain power. <b>Lights</b> let you peek into the halls.</p>
+      <p>🔋 If power hits <b>0%</b>, the doors open and the lights die.</p>
+      <p>😄 <b>Silly mode:</b> maximum hugs, minimum danger. <b>😱 Scary mode:</b> same building, worse intentions. Faster mascots, hungrier power, and jumpscares.</p>
     </div>
   </div>
 
@@ -147,37 +192,37 @@
     <div id="stage">
       <div id="office">
         <div id="doorway-west" class="doorway">
-          <div class="doorlabel">⬅️</div>
+          <div class="doorlabel">WEST HALL</div>
           <div id="peek-west" class="peek"></div>
-          <button id="btn-door-west" class="bigbtn">🚪 West Door: OPEN</button>
-          <button id="btn-light-west" class="bigbtn">💡 West Light: OFF</button>
+          <button id="btn-door-west" class="bigbtn">🚪 Door: OPEN</button>
+          <button id="btn-light-west" class="bigbtn">💡 Light: OFF</button>
         </div>
         <div id="desk">
-          <div class="deskd">🖥️🧸</div>
+          <div class="deskd">🖥️</div>
           <div>your desk</div>
           <div id="office-msg"></div>
         </div>
         <div id="doorway-east" class="doorway">
-          <div class="doorlabel">➡️</div>
+          <div class="doorlabel">EAST HALL</div>
           <div id="peek-east" class="peek"></div>
-          <button id="btn-door-east" class="bigbtn">🚪 East Door: OPEN</button>
-          <button id="btn-light-east" class="bigbtn">💡 East Light: OFF</button>
+          <button id="btn-door-east" class="bigbtn">🚪 Door: OPEN</button>
+          <button id="btn-light-east" class="bigbtn">💡 Light: OFF</button>
         </div>
       </div>
       <div id="cams-view" hidden>
         <div id="room-list">
-          <button id="cam-room-stage" class="bigbtn">🎤 Stage</button>
-          <button id="cam-room-ballpit" class="bigbtn">🔴 Ball Pit</button>
-          <button id="cam-room-party" class="bigbtn">🎈 Party Room</button>
-          <button id="cam-room-arcade" class="bigbtn">🕹️ Arcade</button>
-          <button id="cam-room-westhall" class="bigbtn">⬅️ West Hall</button>
-          <button id="cam-room-easthall" class="bigbtn">➡️ East Hall</button>
-          <button id="cam-room-kitchen" class="bigbtn">🍳 Kitchen</button>
+          <button id="cam-room-stage" class="bigbtn">Cam 01</button>
+          <button id="cam-room-ballpit" class="bigbtn">Cam 02</button>
+          <button id="cam-room-party" class="bigbtn">Cam 03</button>
+          <button id="cam-room-arcade" class="bigbtn">Cam 04</button>
+          <button id="cam-room-westhall" class="bigbtn">Cam 05</button>
+          <button id="cam-room-easthall" class="bigbtn">Cam 06</button>
+          <button id="cam-room-kitchen" class="bigbtn">Cam 07</button>
         </div>
         <div id="cam-feed">
           <div id="cam-static"></div>
           <div id="cam-tag">● REC</div>
-          <div id="cam-room-name">Show Stage</div>
+          <div id="cam-room-name">Cam 01 — Show Stage</div>
           <div id="cam-emoji"></div>
           <p id="cam-gag"></p>
         </div>
@@ -185,7 +230,7 @@
       </div>
       <div id="blackout" hidden>
         <div class="zzz">💤</div>
-        <p><b>Power's out!</b><br>The plushies are coming to tuck you in…</p>
+        <p id="blackout-text"><b>Power's out!</b><br>The plushies are coming to tuck you in…</p>
       </div>
     </div>
     <div id="powerbar-wrap">
@@ -207,8 +252,8 @@
 
   <!-- NIGHT COMPLETE -->
   <div id="screen-complete" class="screen endscreen">
-    <h2>🎉 6AM! You survived! 🎉</h2>
-    <p>The plushies yawn, waddle back to their shelves,<br>and pretend they were never awake.</p>
+    <h2 id="complete-title">🎉 6AM! You survived! 🎉</h2>
+    <p id="complete-text">The plushies yawn, waddle back to their shelves,<br>and pretend they were never awake.</p>
     <p class="pay" id="paycheck"></p>
     <div class="menu">
       <button id="btn-nextnight" class="bigbtn on">Next Night ➡️</button>
@@ -218,20 +263,20 @@
 
   <!-- VICTORY -->
   <div id="screen-victory" class="screen endscreen">
-    <div style="font-size:80px">⭐</div>
-    <h2>Employee of the Month!</h2>
-    <p>You survived all 5 nights at Fluffy's Plushie Playhouse!<br>The plushies voted unanimously. (Muffin voted twice.)</p>
-    <p class="pay">🏆 Prize: unlimited hugs — during business hours only.</p>
+    <div style="font-size:80px" id="victory-emoji">⭐</div>
+    <h2 id="victory-title">Employee of the Month!</h2>
+    <p id="victory-text">You survived all 5 nights at Fluffy's Plushie Playhouse!<br>The plushies voted unanimously. (Muffin voted twice.)</p>
+    <p class="pay" id="victory-pay">🏆 Prize: unlimited hugs — during business hours only.</p>
     <div class="menu">
       <button id="btn-title-2" class="bigbtn">🏠 Title</button>
     </div>
   </div>
 
-  <!-- HUGGED -->
-  <div id="screen-hugged" class="screen endscreen">
-    <div id="hug-emoji">🤗</div>
-    <h2>HUG!</h2>
-    <p id="hug-text"></p>
+  <!-- CAUGHT -->
+  <div id="screen-caught" class="screen endscreen">
+    <div id="caught-emoji">🤗</div>
+    <h2 id="caught-title">HUG!</h2>
+    <p id="caught-text"></p>
     <div class="menu">
       <button id="btn-retry" class="bigbtn on">🔁 Try Again</button>
       <button id="btn-title-3" class="bigbtn">🏠 Title</button>
@@ -248,6 +293,14 @@ const $ = id => document.getElementById(id);
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $(id).classList.add('active');
+}
+let MODE = 'silly'; // 'silly' | 'scary'
+function setMode(m) {
+  MODE = m;
+  document.body.classList.toggle('scary', m === 'scary');
+  $('btn-mode-silly').classList.toggle('sel', m === 'silly');
+  $('btn-mode-scary').classList.toggle('sel', m === 'scary');
+  refreshNightSelect();
 }
 
 /* ================= audio (WebAudio, no files) ================= */
@@ -271,24 +324,44 @@ function tone(freq, dur, type, vol, delay) {
     o.start(t); o.stop(t + dur + 0.05);
   } catch (e) { /* audio unavailable */ }
 }
+function noiseBurst(dur, vol) {
+  if (muted) return;
+  try {
+    const c = ac(), t = c.currentTime;
+    const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const g = c.createGain(); g.gain.value = vol || 0.3;
+    src.connect(g); g.connect(c.destination); src.start(t);
+  } catch (e) { /* audio unavailable */ }
+}
 const sfx = {
   door()  { tone(140, 0.18, 'square', 0.14); tone(90, 0.25, 'square', 0.11, 0.05); },
   knock() { tone(180, 0.12, 'sine', 0.20); tone(150, 0.16, 'sine', 0.20, 0.18); },
   cam()   { tone(880, 0.06, 'square', 0.05); },
   steps() { for (let i = 0; i < 4; i++) tone(300 + Math.random() * 220, 0.05, 'triangle', 0.07, i * 0.09); },
   hug()   { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'sine', 0.11, i * 0.15)); },
-  chime() { [784, 880, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.40, 'sine', 0.09, i * 0.18)); }
+  chime() { [784, 880, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.40, 'sine', 0.09, i * 0.18)); },
+  scare() {
+    noiseBurst(0.8, 0.5);
+    [110, 116.5, 123.5, 155.5, 233].forEach(f => {
+      tone(f, 0.7, 'sawtooth', 0.15); tone(f * 0.5, 0.8, 'square', 0.10, 0.06);
+    });
+  },
+  heartbeat() { tone(55, 0.12, 'sine', 0.35); tone(48, 0.14, 'sine', 0.30, 0.22); },
+  giggle() { [660, 550, 440, 330].forEach((f, i) => tone(f, 0.12, 'triangle', 0.09, i * 0.14)); }
 };
 
 /* ================= data ================= */
 const ROOMS = {
-  stage:    { name: 'Show Stage', deco: '🎤🎶✨' },
-  ballpit:  { name: 'Ball Pit',   deco: '🔴🟡🔵🟢' },
-  party:    { name: 'Party Room', deco: '🎈🎂🎉' },
-  arcade:   { name: 'Arcade',     deco: '🕹️👾🎮' },
-  westhall: { name: 'West Hall',  deco: '🚪💡' },
-  easthall: { name: 'East Hall',  deco: '🚪💡' },
-  kitchen:  { name: 'Kitchen',    deco: '' }
+  stage:    { cam: 'Cam 01', name: 'Show Stage', deco: '🎤🎶✨' },
+  ballpit:  { cam: 'Cam 02', name: 'Ball Pit',   deco: '🔴🟡🔵🟢' },
+  party:    { cam: 'Cam 03', name: 'Party Room', deco: '🎈🎂🎉' },
+  arcade:   { cam: 'Cam 04', name: 'Arcade',     deco: '🕹️👾🎮' },
+  westhall: { cam: 'Cam 05', name: 'West Hall',  deco: '🚪💡' },
+  easthall: { cam: 'Cam 06', name: 'East Hall',  deco: '🚪💡' },
+  kitchen:  { cam: 'Cam 07', name: 'Kitchen',    deco: '' }
 };
 const AGGRO = {
   1: { biscuit: 4,  pip: 3,  muffin: 0 },
@@ -299,64 +372,122 @@ const AGGRO = {
 };
 const HOURS = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM'];
 const MEMOS = {
-  1: "Hey!! Welcome to Fluffy's Plushie Playhouse! 🧸\n\nYour job: sit at this desk from 12 to 6 and keep the power on. The plushie mascots get… sleepwalky at night. They LOVE hugs. Like, a LOT.\n\nIf one wanders into your office, just accept the hug. It's faster that way.\nHave fun!!",
-  2: "Okay, good news and bad news.\n\nGood news: Biscuit and Pip remembered your face! Bad news: that's why they're faster now.\n\nAlso Muffin woke up. Muffin is… thorough. Check the cameras, okay? Okay.",
-  3: "So the plushies held a little meeting last night and voted you 'Most Huggable Guard'. Congrats??\n\nThey're all VERY motivated tonight. Doors are your friend. Power is also your friend. Don't waste either.",
-  4: "real talk? the plushies have been doing cardio. like, SO much cardio.\n\nwatch the cameras. WATCH. THE. CAMERAS.\n\n— D (writing this very fast because Muffin is behind me)",
-  5: "FINAL NIGHT!! 🎉\n\nSurvive till 6AM and you're Employee of the Month. The plushies are at MAXIMUM snuggle. Every door, every light, every camera — make it count.\n\nDon't die of cuteness. See you at sunrise."
+  silly: {
+    1: "Welcome to Fluffy's!! 🧸\n\nRule #1: the plushies are alive. Rule #2: do NOT think about rule #1.\n\nThey're union-certified 100% non-lethal (review pending). If one wanders into your office, just accept the hug — it's faster that way. Have fun!!",
+    2: "Update: Biscuit learned your name. It also learned how doors work. Coincidence?? Management says yes. Management also left early.\n\nMuffin woke up, by the way. Muffin is… thorough.",
+    3: "The plushies held a meeting and voted you 'Most Huggable Guard.' Congrats??\n\nThey're VERY motivated tonight. Doors are your friend. Power is also your friend. Don't waste either.",
+    4: "Real talk: the plushies have been doing cardio. I saw Pip doing burpees. BURPEES.\n\nWatch the cameras. Don't let them smell fear. Or snacks.",
+    5: "FINAL NIGHT!! 🎉\n\nSurvive till 6AM and you're Employee of the Month. Fail and you're Employee of the Hug. Honestly? Same thing.\n\nDon't die of cuteness. See you at sunrise."
+  },
+  scary: {
+    1: "Night guard —\n\nThe mascots move after midnight. They were built for birthday parties. Something in the wiring changed.\n\nKeep the doors shut when you hear them close. Don't let them reach the office.",
+    2: "Biscuit stood in the west hall for an hour today. Just stood there. Staring into the camera.\n\nIt's faster tonight. They all are.",
+    3: "Muffin isn't on any inventory list. I checked twice.\n\nWhatever it is, it learns. It watched me lock the east door yesterday.",
+    4: "The last guard left a note: 'THE CAMERAS HAVE BLIND SPOTS.'\n\nI don't know what that means and I don't want to. Check the halls. Trust the lights. Trust nothing else.",
+    5: "Last night.\n\nIf the power dies, don't hide under the desk. It worked for the last guy.\n\nHe's the stain in the party room. Good luck."
+  }
 };
 const PAY = {
-  1: '💵 Paycheck: $12.50 + one (1) juice box 🧃',
-  2: '💵 Paycheck: $18.75 + a slightly-used party hat 🎩',
-  3: '💵 Paycheck: $25.00 + 10% off plushie insurance 🧾',
-  4: '💵 Paycheck: $33.33 + a firm handshake 🤝',
-  5: '💵 Paycheck: $50.00 + a trophy + a lifetime supply of lint 🏆'
+  silly: {
+    1: '💵 Paycheck: $12.50 + one (1) juice box 🧃',
+    2: '💵 Paycheck: $18.75 + a slightly-used party hat 🎩',
+    3: '💵 Paycheck: $25.00 + 10% off plushie insurance 🧾',
+    4: '💵 Paycheck: $33.33 + a firm handshake 🤝',
+    5: '💵 Paycheck: $50.00 + a trophy + a lifetime supply of lint 🏆'
+  },
+  scary: {
+    1: '💵 Paycheck: $12.50. Hazard pay: denied. Reason listed: "plushies."',
+    2: '💵 Paycheck: $18.75. Management thanks you for your continued breathing.',
+    3: '💵 Paycheck: $25.00. The stain in the party room got a raise instead.',
+    4: '💵 Paycheck: $33.33. Dana has stopped answering emails.',
+    5: '💵 Paycheck: $50.00. Collect it in person. If you can.'
+  }
 };
+const COMPLETE = {
+  silly: { title: '🎉 6AM! You survived! 🎉',
+    text: 'The plushies yawn, waddle back to their shelves,<br>and pretend they were never awake.' },
+  scary: { title: '6 AM.',
+    text: 'The fluorescents buzz back to life. The mascots are gone.<br>But the cameras are still recording. They never stop recording.' }
+};
+const VICTORY = {
+  silly: { emoji: '⭐', title: 'Employee of the Month!',
+    text: "You survived all 5 nights at Fluffy's Plushie Playhouse!<br>The plushies voted unanimously. (Muffin voted twice.)",
+    pay: '🏆 Prize: unlimited hugs — during business hours only.' },
+  scary: { emoji: '🩸', title: 'You Made It Out.',
+    text: 'Five nights. The doors held. Barely.<br>Dana never came to collect the morning report.',
+    pay: '🏆 Prize: you get to leave. Most don\'t.' }
+};
+const HUG_LINES = [
+  '{n} {e} tackled you with a hug reserved for birthdays and hostages.',
+  '{n} {e} squeezed you like a stress ball. You are the stress ball.',
+  '{n} {e} has decided you live here now. Resistance was adorable.',
+  '{n} {e} hugged you so hard your skeleton filed a complaint.'
+];
+const SCARE_CAUGHT = {
+  biscuit: 'Biscuit is inside the office. You hear servos where the giggles used to be.',
+  pip: 'Pip is already behind the desk. It was never in the hallway. It was never on the cameras.',
+  muffin: 'Muffin found you. Of course it did. It always knew where the desk was.'
+};
+const CAM_GAGS_SILLY = [
+  'Nothing but {d}. Suspiciously peaceful.',
+  '{d} and zero plushies. Enjoy it while it lasts.',
+  'Just {d}. The calm before the cuddle.'
+];
+const CAM_GAGS_SCARY = [
+  'Static. {d}. Static.',
+  'Something moved. The camera didn\'t catch it. They never do.',
+  '{d}. You swear one of the shadows wasn\'t there before.'
+];
 
 /* ================= game state ================= */
 let G = null;
-
+function ukey() { return 'fluffys_unlocked_' + MODE; }
 function unlocked() {
-  try { return parseInt(localStorage.getItem('fluffys_unlocked') || '1', 10) || 1; }
+  try { return parseInt(localStorage.getItem(ukey()) || '1', 10) || 1; }
   catch (e) { return 1; }
 }
 function setUnlocked(n) {
-  try { localStorage.setItem('fluffys_unlocked', String(Math.min(5, Math.max(1, n)))); } catch (e) {}
+  try { localStorage.setItem(ukey(), String(Math.min(5, Math.max(1, n)))); } catch (e) {}
+}
+function glyph(p) {
+  if (MODE === 'scary') return '<span class="corrupt">' + p.emoji + '</span>';
+  return p.emoji;
 }
 
 function newGame(night) {
   const a = AGGRO[night];
+  const mult = MODE === 'scary' ? 1.5 : 1;
   const plushies = [
     { key: 'biscuit', name: 'Biscuit', emoji: '🐰', side: 'west',
-      stages: ['stage', 'arcade', 'westhall', 'office'], pos: 0, aggro: a.biscuit },
+      stages: ['stage', 'arcade', 'westhall', 'office'], pos: 0, aggro: Math.round(a.biscuit * mult) },
     { key: 'pip', name: 'Pip', emoji: '🐶', side: 'east',
-      stages: ['ballpit', 'party', 'easthall', 'office'], pos: 0, aggro: a.pip }
+      stages: ['ballpit', 'party', 'easthall', 'office'], pos: 0, aggro: Math.round(a.pip * mult) }
   ];
   const mid = Math.random() < 0.5 ? 'arcade' : 'stage';
   const hall = Math.random() < 0.5 ? 'westhall' : 'easthall';
   plushies.push({ key: 'muffin', name: 'Muffin', emoji: '🧸',
     side: hall === 'westhall' ? 'west' : 'east',
-    stages: ['party', mid, hall, 'office'], pos: 0, aggro: a.muffin });
+    stages: ['party', mid, hall, 'office'], pos: 0, aggro: Math.round(a.muffin * mult) });
   G = {
-    night, power: 100, secInHour: 0, totalSec: 0, hourIdx: 0,
-    doors: { west: false, east: false },   // false = open
+    night, mode: MODE, power: 100, secInHour: 0, totalSec: 0, hourIdx: 0,
+    doors: { west: false, east: false },
     lights: { west: false, east: false },
     cams: false, plushies,
     over: false, blackout: false, blackoutTimer: null, msgTimer: null,
     currentCam: 'stage', timer: null
   };
 }
-
 function clearTimers() {
   if (G && G.timer) clearInterval(G.timer);
   if (G && G.blackoutTimer) clearTimeout(G.blackoutTimer);
   if (G && G.msgTimer) clearTimeout(G.msgTimer);
 }
-
 function startNight(night) {
   newGame(night);
-  $('night-label').textContent = 'Night ' + night;
+  $('night-label').textContent = 'Night ' + night + (MODE === 'scary' ? ' 😱' : '');
   $('blackout').hidden = true;
+  $('jumpscare').hidden = true;
+  document.body.classList.remove('shake');
   setCams(false);
   setDoor('west', false); setDoor('east', false);
   setLight('west', false); setLight('east', false);
@@ -371,25 +502,21 @@ function startNight(night) {
 function tick() {
   if (!G || G.over) return;
   G.totalSec++; G.secInHour++;
-
-  // power drain
   const closedDoors = (G.doors.west ? 1 : 0) + (G.doors.east ? 1 : 0);
   const lightsOn = (G.lights.west ? 1 : 0) + (G.lights.east ? 1 : 0);
-  G.power -= 0.06 + 0.12 * closedDoors + 0.08 * lightsOn + (G.cams ? 0.10 : 0);
+  const drainMult = G.mode === 'scary' ? 1.25 : 1;
+  G.power -= (0.06 + 0.12 * closedDoors + 0.08 * lightsOn + (G.cams ? 0.10 : 0)) * drainMult;
   if (G.power <= 0 && !G.blackout) { G.power = 0; powerOut(); }
-
-  // clock
   if (G.secInHour >= 60) {
     G.secInHour = 0; G.hourIdx++;
     if (G.hourIdx >= 6) { winNight(); return; }
   }
-
-  // movement tick every 5 seconds
   if (G.totalSec % 5 === 0) moveTick();
-
+  // heartbeat when something lurks in the halls (scary mode)
+  if (G.mode === 'scary' && G.totalSec % 4 === 0 &&
+      (plushIn('westhall').length || plushIn('easthall').length)) sfx.heartbeat();
   updateHUD();
 }
-
 function moveTick() {
   if (G.blackout) return;
   for (const p of G.plushies) {
@@ -400,49 +527,59 @@ function moveTick() {
   }
   updateHUD();
 }
-
 function advance(p) {
   const next = p.stages[p.pos + 1];
   if (next === 'office') {
     if (G.doors[p.side]) {
-      // bounced off a closed door: retreat 2 rooms
       p.pos = Math.max(0, p.pos - 2);
       sfx.knock();
-      msg('Thump! Something bounced off the ' + p.side + ' door.');
+      msg(G.mode === 'scary'
+        ? 'THUMP. Something heavy hit the ' + p.side + ' door. It knows you\'re in here.'
+        : 'Thump! Something bounced off the ' + p.side + ' door.');
     } else {
-      hug(p, p.name + ' ' + p.emoji + ' got you with a surprise hug!');
+      caught(p);
     }
     return;
   }
   p.pos++;
   if (next === 'westhall' || next === 'easthall') {
     sfx.steps();
-    msg('You hear tiny pitter-patters nearby…');
+    msg(G.mode === 'scary' ? 'Footsteps. Close. Too close.' : 'You hear tiny pitter-patters nearby…');
   }
 }
-
 function powerOut() {
   G.blackout = true;
   G.doors.west = false; G.doors.east = false;
   G.lights.west = false; G.lights.east = false;
   setCams(false);
   $('blackout').hidden = false;
-  msg("The lights are out… they're coming to tuck you in.");
+  if (G.mode === 'scary') {
+    $('blackout-text').innerHTML = '<b>Power\'s out.</b><br>They\'re already inside the walls.';
+    sfx.giggle();
+  } else {
+    $('blackout-text').innerHTML = '<b>Power\'s out!</b><br>The plushies are coming to tuck you in…';
+  }
   const active = G.plushies.filter(p => p.aggro > 0);
   const p = active[Math.floor(Math.random() * active.length)];
   G.blackoutTimer = setTimeout(() => {
-    hug(p, 'The plushies tucked you in. 💤');
-  }, 12000);
+    caught(p, true);
+  }, G.mode === 'scary' ? 8000 : 12000);
   updateHUD();
 }
-
 function winNight() {
   G.over = true;
   clearTimers();
   sfx.chime();
   setUnlocked(unlocked() < G.night + 1 ? G.night + 1 : unlocked());
-  $('paycheck').textContent = PAY[G.night];
+  $('paycheck').textContent = PAY[G.mode][G.night];
+  $('complete-title').textContent = COMPLETE[G.mode].title;
+  $('complete-text').innerHTML = COMPLETE[G.mode].text;
   if (G.night >= 5) {
+    const v = VICTORY[G.mode];
+    $('victory-emoji').textContent = v.emoji;
+    $('victory-title').textContent = v.title;
+    $('victory-text').innerHTML = v.text;
+    $('victory-pay').textContent = v.pay;
     showScreen('screen-victory');
   } else {
     $('btn-nextnight').textContent = 'Next Night ➡️';
@@ -450,15 +587,33 @@ function winNight() {
   }
   refreshNightSelect();
 }
-
-function hug(p, text) {
+function caught(p, blackout) {
   if (G.over) return;
   G.over = true;
   clearTimers();
-  sfx.hug();
-  $('hug-emoji').textContent = '🤗' + p.emoji;
-  $('hug-text').textContent = text;
-  showScreen('screen-hugged');
+  if (G.mode === 'scary') {
+    sfx.scare();
+    $('scare-face').innerHTML = '<span class="corrupt" style="font-size:1em">' + p.emoji + '</span>';
+    $('jumpscare').hidden = false;
+    document.body.classList.add('shake');
+    setTimeout(() => {
+      $('jumpscare').hidden = true;
+      document.body.classList.remove('shake');
+      $('caught-emoji').innerHTML = '<span class="corrupt">' + p.emoji + '</span>';
+      $('caught-title').textContent = blackout ? 'TUCKED IN.' : 'STUFFED.';
+      $('caught-text').textContent = blackout
+        ? 'The dark took the office first. Then it took you.'
+        : SCARE_CAUGHT[p.key];
+      showScreen('screen-caught');
+    }, 1400);
+  } else {
+    sfx.hug();
+    $('caught-emoji').textContent = '🤗' + p.emoji;
+    $('caught-title').textContent = 'HUG!';
+    const line = HUG_LINES[Math.floor(Math.random() * HUG_LINES.length)];
+    $('caught-text').textContent = line.replace('{n}', p.name).replace('{e}', p.emoji);
+    showScreen('screen-caught');
+  }
 }
 
 /* ================= UI ================= */
@@ -468,11 +623,10 @@ function msg(t) {
   if (G.msgTimer) clearTimeout(G.msgTimer);
   G.msgTimer = setTimeout(() => { el.textContent = ''; }, 4000);
 }
-
 function setDoor(side, closed) {
   G.doors[side] = closed;
   const b = $('btn-door-' + side);
-  b.textContent = (side === 'west' ? '🚪 West Door: ' : '🚪 East Door: ') + (closed ? 'CLOSED' : 'OPEN');
+  b.textContent = '🚪 Door: ' + (closed ? 'CLOSED' : 'OPEN');
   b.classList.toggle('warn', closed);
 }
 function toggleDoor(side) {
@@ -484,7 +638,7 @@ function toggleDoor(side) {
 function setLight(side, on) {
   G.lights[side] = on;
   const b = $('btn-light-' + side);
-  b.textContent = (side === 'west' ? '💡 West Light: ' : '💡 East Light: ') + (on ? 'ON' : 'OFF');
+  b.textContent = '💡 Light: ' + (on ? 'ON' : 'OFF');
   b.classList.toggle('on', on);
 }
 function toggleLight(side) {
@@ -518,10 +672,10 @@ function updateHUD() {
   $('pip-light-w').classList.toggle('lit', G.lights.west);
   $('pip-light-e').classList.toggle('lit', G.lights.east);
   $('pip-cam').classList.toggle('lit', G.cams);
-  $('peek-west').textContent = (G.lights.west && !G.blackout)
-    ? plushIn('westhall').map(p => p.emoji).join('') : '';
-  $('peek-east').textContent = (G.lights.east && !G.blackout)
-    ? plushIn('easthall').map(p => p.emoji).join('') : '';
+  $('peek-west').innerHTML = (G.lights.west && !G.blackout)
+    ? plushIn('westhall').map(glyph).join('') : '';
+  $('peek-east').innerHTML = (G.lights.east && !G.blackout)
+    ? plushIn('easthall').map(glyph).join('') : '';
 }
 function renderCam() {
   if (!G) return;
@@ -529,17 +683,28 @@ function renderCam() {
   document.querySelectorAll('#room-list .bigbtn').forEach(b => b.classList.remove('sel'));
   const btn = $('cam-room-' + r);
   if (btn) btn.classList.add('sel');
-  $('cam-room-name').textContent = ROOMS[r].name;
+  $('cam-room-name').textContent = ROOMS[r].cam + ' — ' + ROOMS[r].name;
   if (r === 'kitchen') {
     $('cam-emoji').textContent = '📺';
-    $('cam-gag').textContent = 'Camera disabled. Only the health inspector gets to see the kitchen.';
+    $('cam-gag').textContent = G.mode === 'scary'
+      ? 'Audio only. You don\'t want to see the kitchen.'
+      : 'Camera disabled. Only the health inspector gets to see the kitchen.';
   } else {
-    $('cam-gag').textContent = '';
-    $('cam-emoji').textContent = (ROOMS[r].deco + ' ' + plushIn(r).map(p => p.emoji).join(' ')).trim();
+    const here = plushIn(r);
+    $('cam-emoji').innerHTML = (ROOMS[r].deco + ' ' + here.map(glyph).join(' ')).trim();
+    if (here.length) {
+      $('cam-gag').textContent = G.mode === 'scary'
+        ? here.map(p => p.name + ' is watching the camera.').join(' ')
+        : here.map(p => p.name + ' waves at the camera!').join(' ');
+    } else {
+      const gags = G.mode === 'scary' ? CAM_GAGS_SCARY : CAM_GAGS_SILLY;
+      $('cam-gag').textContent = gags[Math.floor(Math.random() * gags.length)]
+        .replace('{d}', ROOMS[r].deco || 'empty room');
+    }
   }
 }
 
-/* ================= screens: title / intro ================= */
+/* ================= screens ================= */
 function refreshNightSelect() {
   const u = unlocked();
   for (let n = 1; n <= 5; n++) {
@@ -548,29 +713,34 @@ function refreshNightSelect() {
     else { b.disabled = true; b.textContent = '🔒'; }
   }
 }
-function typeMemo(text, done) {
+function typeMemo(text) {
   const el = $('memo-text');
   el.textContent = '';
   let i = 0;
   const t = setInterval(() => {
     i++;
     el.textContent = text.slice(0, i);
-    if (i >= text.length) { clearInterval(t); if (done) done(); }
-  }, 16);
+    if (i >= text.length) clearInterval(t);
+  }, 14);
 }
 function showIntro(night) {
-  $('intro-night-label').textContent = 'Night ' + night;
+  $('intro-night-label').textContent = 'Night ' + night + (MODE === 'scary' ? ' 😱' : ' 😄');
+  $('memo-from').textContent = MODE === 'scary' ? '— Dana (please answer your radio)' : '— Dana, your manager 💼';
   showScreen('screen-intro');
-  typeMemo(MEMOS[night]);
+  typeMemo(MEMOS[MODE][night]);
   $('btn-clockin').onclick = () => startNight(night);
 }
 function goTitle() {
   if (G) { G.over = true; clearTimers(); }
+  $('jumpscare').hidden = true;
+  document.body.classList.remove('shake');
   refreshNightSelect();
   showScreen('screen-title');
 }
 
 /* ================= wiring ================= */
+$('btn-mode-silly').onclick = () => setMode('silly');
+$('btn-mode-scary').onclick = () => setMode('scary');
 $('btn-newgame').onclick = () => showIntro(1);
 $('btn-nightselect').onclick = () => {
   const p = $('nightselect-panel');
@@ -592,7 +762,7 @@ $('btn-light-east').onclick = () => toggleLight('east');
 $('btn-cams').onclick = () => { if (G && !G.over && !G.blackout) setCams(true); };
 $('btn-cams-close').onclick = () => setCams(false);
 Object.keys(ROOMS).forEach(r => {
-  $('cam-room-' + r).onclick = () => { G.currentCam = r; sfx.cam(); renderCam(); };
+  $('cam-room-' + r).onclick = () => { if (G) { G.currentCam = r; sfx.cam(); renderCam(); } };
 });
 $('btn-nextnight').onclick = () => showIntro(Math.min(5, G.night + 1));
 $('btn-retry').onclick = () => startNight(G.night);
@@ -604,7 +774,7 @@ $('btn-mute').onclick = () => {
   $('btn-mute').textContent = muted ? '🔇' : '🔊';
 };
 
-refreshNightSelect();
+setMode('silly');
 </script>
 </body>
 </html>
