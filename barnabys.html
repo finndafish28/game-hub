@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Five Nights at Barnaby's</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: linear-gradient(160deg, #030303 0%, #0d0202 45%, #1c0606 100%);
+    color: #e8d5d5; min-height: 100vh; display: flex; justify-content: center; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 60;
+    background: radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,.92) 100%); }
+  #grain { position: fixed; inset: 0; pointer-events: none; z-index: 61; opacity: .05; mix-blend-mode: overlay;
+    background-image: repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 3px); }
+  #app { width: 100%; max-width: 860px; padding: 12px; display: flex; flex-direction: column; min-height: 100vh; }
+  body.shake #app { animation: shake .45s linear infinite; }
+  @keyframes shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-9px,5px) rotate(-.6deg); }
+    40% { transform: translate(8px,-6px) rotate(.6deg); } 60% { transform: translate(-7px,-4px); }
+    80% { transform: translate(6px,6px) rotate(-.4deg); } }
+  .screen { display: none; animation: fadeIn .35s ease; flex: 1; }
+  .screen.active { display: flex; flex-direction: column; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  h1 { font-size: clamp(30px, 7vw, 54px); text-align: center; margin: 18px 0 4px;
+    text-shadow: 0 0 24px rgba(255,0,0,.55), 0 3px 0 #000; letter-spacing: 2px; }
+  h2 { text-align: center; }
+  .tagline { text-align: center; opacity: .85; margin-bottom: 24px; font-size: 17px; }
+  .menu { display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+    max-width: 420px; margin: 0 auto; width: 100%; }
+  .bigbtn { min-height: 58px; font-size: 19px; font-weight: 700; color: #fff;
+    background: #8b0000; border: none; border-radius: 18px; padding: 12px 20px;
+    cursor: pointer; box-shadow: 0 4px 0 #4d0000; transition: transform .06s; }
+  .bigbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #4d0000; }
+  .bigbtn:disabled { background: #3a3a4a; box-shadow: 0 4px 0 #22222c; opacity: .6; cursor: not-allowed; }
+  .bigbtn.warn { background: #a31212; box-shadow: 0 4px 0 #4d0000; }
+  .bigbtn.on { background: #00b894; box-shadow: 0 4px 0 #007a5e; }
+  .panel { background: rgba(120,0,0,.12); border: 1px solid rgba(255,0,0,.25);
+    border-radius: 18px; padding: 14px 16px; margin-top: 12px; }
+  .panel p { line-height: 1.55; }
+  .nightgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+  .nightgrid .bigbtn { min-height: 52px; font-size: 17px; padding: 8px; }
+  #call-text { background: #160c0c; color: #d8b8b8; border: 1px solid rgba(255,0,0,.3);
+    border-radius: 16px; padding: 18px; min-height: 190px; font-size: 17px; line-height: 1.6;
+    white-space: pre-wrap; box-shadow: 0 4px 0 #000; font-family: "Courier New", monospace; }
+  #call-from { text-align: right; font-style: italic; margin-top: 8px; opacity: .8; }
+  #topbar { display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 4px; font-size: 20px; font-weight: 700; }
+  #btn-mute { background: rgba(255,255,255,.12); border: none; border-radius: 12px;
+    font-size: 22px; padding: 6px 12px; cursor: pointer; color: #fff; }
+  #stage { position: relative; flex: 1; display: flex; flex-direction: column; }
+  #office { display: flex; gap: 8px; align-items: stretch; }
+  .doorway { flex: 1; display: flex; flex-direction: column; gap: 8px; background: rgba(0,0,0,.65);
+    border: 1px solid rgba(255,0,0,.18); border-radius: 18px; padding: 10px;
+    position: relative; min-height: 300px; justify-content: flex-end; }
+  .doorway .peek { font-size: 52px; text-align: center; min-height: 64px; }
+  .doorway .doorlabel { text-align: center; font-size: 15px; font-weight: 800; color: #8a6f6f;
+    letter-spacing: 3px; margin-bottom: 4px; }
+  .doorway .bigbtn { font-size: 15px; min-height: 54px; padding: 8px 6px; }
+  #desk { flex: 1.4; background: rgba(0,0,0,.5); border-radius: 18px; padding: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; min-height: 300px; }
+  #desk .deskd { font-size: 54px; }
+  #office-msg { margin-top: 12px; font-size: 16px; font-style: italic; color: #ffb3b3; min-height: 48px; }
+  #powerbar-wrap { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  #powerbar { flex: 1; height: 22px; background: rgba(0,0,0,.4); border-radius: 12px; overflow: hidden; }
+  #powerfill { height: 100%; width: 100%; border-radius: 12px;
+    background: linear-gradient(90deg,#00b894,#55efc4); transition: width .5s; }
+  #powerpct { font-weight: 700; min-width: 52px; text-align: right; }
+  #usage-pips { display: flex; gap: 6px; }
+  .pip { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.15);
+    font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .pip.lit { background: #ff2222; box-shadow: 0 0 8px #ff2222; }
+  #bottombar { display: flex; justify-content: center; margin: 10px 0 4px; }
+  #cams-view { display: flex; flex-direction: column; gap: 8px; }
+  #room-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  #room-list .bigbtn { font-size: 13px; min-height: 46px; padding: 8px 10px; }
+  #room-list .bigbtn.sel { background: #00b894; box-shadow: 0 4px 0 #007a5e; }
+  #cam-feed { position: relative; background: #050505; border-radius: 18px; min-height: 260px;
+    overflow: hidden; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 16px; }
+  #cam-static { position: absolute; inset: 0; pointer-events: none; opacity: .8;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 2px, transparent 2px 4px);
+    animation: staticShift .12s steps(2) infinite; }
+  @keyframes staticShift { 0% { transform: translateY(0); } 100% { transform: translateY(4px); } }
+  #cam-room-name { font-size: 20px; font-weight: 800; z-index: 1; background: rgba(0,0,0,.5);
+    padding: 4px 14px; border-radius: 12px; margin-bottom: 10px; font-family: "Courier New", monospace; }
+  #cam-emoji { font-size: 52px; z-index: 1; line-height: 1.4; text-align: center; }
+  #cam-gag { z-index: 1; font-style: italic; color: #8a6f6f; text-align: center; padding: 0 12px; }
+  #cam-tag { position: absolute; top: 8px; right: 12px; z-index: 1; font-size: 13px;
+    color: #ff2222; font-weight: 700; font-family: "Courier New", monospace; }
+  .corrupt { display: inline-block; filter: grayscale(.75) brightness(.55) contrast(1.9);
+    text-shadow: 0 0 22px rgba(255,0,0,.9); animation: twitch 1.1s steps(3) infinite; }
+  @keyframes twitch { 0%,100% { transform: translate(0,0); } 33% { transform: translate(-2px,1px); }
+    66% { transform: translate(2px,-2px); } }
+  #blackout { position: absolute; inset: 0; background: rgba(2,2,10,.96); border-radius: 18px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 5; text-align: center; padding: 20px; }
+  #blackout .zzz { font-size: 60px; }
+  .endscreen { align-items: center; justify-content: center; text-align: center; gap: 10px; }
+  #caught-emoji { font-size: 96px; line-height: 1.2; animation: scarepulse .5s steps(2) infinite; }
+  @keyframes scarepulse { 0%,100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.25) rotate(2deg); } }
+  .pay { font-size: 22px; font-weight: 700; color: #ffb3b3; }
+  #jumpscare { position: fixed; inset: 0; background: #000; z-index: 100;
+    display: flex; align-items: center; justify-content: center; }
+  #jumpscare[hidden] { display: none; }
+  #scare-face { font-size: 42vmin; line-height: 1; animation: scarezoom .12s steps(2) infinite; }
+  @keyframes scarezoom { 0% { transform: scale(1) rotate(-4deg); } 100% { transform: scale(1.4) rotate(4deg); } }
+  .airoow { display: flex; align-items: center; gap: 10px; justify-content: space-between;
+    background: rgba(0,0,0,.4); border-radius: 14px; padding: 8px 12px; margin-top: 8px; }
+  .airoow .aname { font-size: 20px; font-weight: 700; flex: 1; text-align: left; }
+  .airoow .stepper { display: flex; align-items: center; gap: 8px; }
+  .airoow .stepbtn { width: 44px; height: 44px; font-size: 22px; border-radius: 12px; border: none;
+    background: #8b0000; color: #fff; font-weight: 800; cursor: pointer; }
+  .airoow .aival { font-size: 24px; font-weight: 800; min-width: 44px; text-align: center;
+    font-family: "Courier New", monospace; }
+  footer { text-align: center; opacity: .6; font-size: 14px; padding: 14px 0 6px; }
+</style>
+</head>
+<body>
+<div id="vignette"></div><div id="grain"></div>
+<div id="jumpscare" hidden><div id="scare-face"></div></div>
+<div id="app">
+
+  <!-- TITLE -->
+  <div id="screen-title" class="screen active">
+    <h1>🐻 Five Nights<br>at Barnaby's</h1>
+    <p class="tagline">Barnaby's Pizza Palace is hiring a night guard.<br>Survive 12AM → 6AM. Five nights.</p>
+    <div class="menu">
+      <button id="btn-newgame" class="bigbtn">🌙 New Game</button>
+      <button id="btn-nightselect" class="bigbtn">🗓️ Night Select</button>
+      <button id="btn-custom" class="bigbtn">🎛️ Custom Night</button>
+      <button id="btn-howto" class="bigbtn">❓ How to Play</button>
+    </div>
+    <div id="nightselect-panel" class="panel" hidden>
+      <b>Pick a night:</b>
+      <div class="nightgrid">
+        <button id="btn-night-1" class="bigbtn">1</button>
+        <button id="btn-night-2" class="bigbtn">2</button>
+        <button id="btn-night-3" class="bigbtn">3</button>
+        <button id="btn-night-4" class="bigbtn">4</button>
+        <button id="btn-night-5" class="bigbtn">5</button>
+      </div>
+    </div>
+    <div id="howto-panel" class="panel" hidden>
+      <p>🕛 <b>Goal:</b> survive 12AM → 6AM as night guard.</p>
+      <p>🐻🐰🐶🐭 The animatronics roam. Track them on the <b>cameras</b>.</p>
+      <p>🚪 <b>Doors</b> block them — but drain power. <b>Lights</b> reveal the blind corners.</p>
+      <p>🔋 Power at <b>0%</b> = doors open, lights dead. Barnaby comes to the door…</p>
+      <p>🐭 <b>Rusty</b> hides in Parts Cove. Watch his camera or he'll sprint for the west door.</p>
+      <p>📹 Kitchen is audio-only. Something chewed the feed.</p>
+    </div>
+  </div>
+
+  <!-- CUSTOM NIGHT -->
+  <div id="screen-custom" class="screen">
+    <h2>🎛️ Custom Night</h2>
+    <p class="tagline">Set each animatronic's aggression (0–20).<br>20/20/20/20 is a terrible idea.</p>
+    <div class="menu" style="max-width:480px">
+      <div class="airoow"><span class="aname">🐰 Hopper</span><span class="stepper">
+        <button class="stepbtn" id="ai-hopper-down">−</button><span class="aival" id="ai-hopper-val">0</span>
+        <button class="stepbtn" id="ai-hopper-up">+</button></span></div>
+      <div class="airoow"><span class="aname">🐶 Pippa</span><span class="stepper">
+        <button class="stepbtn" id="ai-pippa-down">−</button><span class="aival" id="ai-pippa-val">0</span>
+        <button class="stepbtn" id="ai-pippa-up">+</button></span></div>
+      <div class="airoow"><span class="aname">🐻 Barnaby</span><span class="stepper">
+        <button class="stepbtn" id="ai-barnaby-down">−</button><span class="aival" id="ai-barnaby-val">0</span>
+        <button class="stepbtn" id="ai-barnaby-up">+</button></span></div>
+      <div class="airoow"><span class="aname">🐭 Rusty</span><span class="stepper">
+        <button class="stepbtn" id="ai-rusty-down">−</button><span class="aival" id="ai-rusty-val">0</span>
+        <button class="stepbtn" id="ai-rusty-up">+</button></span></div>
+      <div style="height:10px"></div>
+      <button id="btn-custom-start" class="bigbtn on">▶️ Start Custom Night</button>
+      <button id="btn-custom-2020" class="bigbtn">💀 20/20/20/20</button>
+      <button id="btn-title-0" class="bigbtn">🏠 Title</button>
+    </div>
+  </div>
+
+  <!-- NIGHT INTRO / PHONE CALL -->
+  <div id="screen-intro" class="screen">
+    <h2 id="intro-night-label">Night 1</h2>
+    <div id="call-text"></div>
+    <div id="call-from">— Lou, your manager 📞</div>
+    <div class="menu" style="margin-top:18px">
+      <button id="btn-clockin" class="bigbtn on">🕛 Clock In</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="screen-game" class="screen">
+    <div id="topbar">
+      <span id="night-label">Night 1</span>
+      <span id="clock">12 AM</span>
+      <button id="btn-mute" title="mute">🔊</button>
+    </div>
+    <div id="stage">
+      <div id="office">
+        <div id="doorway-west" class="doorway">
+          <div class="doorlabel">WEST HALL</div>
+          <div id="peek-west" class="peek"></div>
+          <button id="btn-door-west" class="bigbtn">🚪 Door: OPEN</button>
+          <button id="btn-light-west" class="bigbtn">💡 Light: OFF</button>
+        </div>
+        <div id="desk">
+          <div class="deskd">🖥️</div>
+          <div>your desk</div>
+          <div id="office-msg"></div>
+        </div>
+        <div id="doorway-east" class="doorway">
+          <div class="doorlabel">EAST HALL</div>
+          <div id="peek-east" class="peek"></div>
+          <button id="btn-door-east" class="bigbtn">🚪 Door: OPEN</button>
+          <button id="btn-light-east" class="bigbtn">💡 Light: OFF</button>
+        </div>
+      </div>
+      <div id="cams-view" hidden>
+        <div id="room-list"></div>
+        <div id="cam-feed">
+          <div id="cam-static"></div>
+          <div id="cam-tag">● REC</div>
+          <div id="cam-room-name">Cam 01 — Show Stage</div>
+          <div id="cam-emoji"></div>
+          <p id="cam-gag"></p>
+        </div>
+        <div class="menu"><button id="btn-cams-close" class="bigbtn">⬇️ Put Cameras Down</button></div>
+      </div>
+      <div id="blackout" hidden>
+        <div class="zzz">🐻</div>
+        <p id="blackout-text"><b>Power's out.</b><br>Something is standing in the east doorway…</p>
+      </div>
+    </div>
+    <div id="powerbar-wrap">
+      <span>🔋</span>
+      <div id="powerbar"><div id="powerfill"></div></div>
+      <span id="powerpct">100%</span>
+      <div id="usage-pips">
+        <span id="pip-door-w" class="pip">🚪</span>
+        <span id="pip-light-w" class="pip">💡</span>
+        <span id="pip-cam" class="pip">📷</span>
+        <span id="pip-light-e" class="pip">💡</span>
+        <span id="pip-door-e" class="pip">🚪</span>
+      </div>
+    </div>
+    <div id="bottombar">
+      <button id="btn-cams" class="bigbtn">📷 Cameras</button>
+    </div>
+  </div>
+
+  <!-- NIGHT COMPLETE -->
+  <div id="screen-complete" class="screen endscreen">
+    <h2>6 AM.</h2>
+    <p>The fluorescents buzz on. The animatronics are back on stage.<br>They never moved. Obviously.</p>
+    <p class="pay" id="paycheck"></p>
+    <div class="menu">
+      <button id="btn-nextnight" class="bigbtn on">Next Night ➡️</button>
+      <button id="btn-title-1" class="bigbtn">🏠 Title</button>
+    </div>
+  </div>
+
+  <!-- VICTORY -->
+  <div id="screen-victory" class="screen endscreen">
+    <div style="font-size:80px">🏆</div>
+    <h2>You Made It Out.</h2>
+    <p id="victory-text">Five nights. The doors held. Barely.<br>Lou never came to collect the morning report.</p>
+    <p class="pay" id="victory-pay">💵 Final paycheck: $350.00 + Employee of the Month plaque</p>
+    <div class="menu">
+      <button id="btn-title-2" class="bigbtn">🏠 Title</button>
+    </div>
+  </div>
+
+  <!-- CAUGHT -->
+  <div id="screen-caught" class="screen endscreen">
+    <div id="caught-emoji">🐻</div>
+    <h2 id="caught-title">STUFFED.</h2>
+    <p id="caught-text"></p>
+    <div class="menu">
+      <button id="btn-retry" class="bigbtn on">🔁 Try Again</button>
+      <button id="btn-title-3" class="bigbtn">🏠 Title</button>
+    </div>
+  </div>
+
+  <footer>barnaby's pizza palace — est. 1983 🍕</footer>
+</div>
+
+<script>
+"use strict";
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+/* ================= audio ================= */
+let actx = null, muted = false;
+function ac() {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function tone(freq, dur, type, vol, delay) {
+  if (muted) return;
+  try {
+    const c = ac(), t = c.currentTime + (delay || 0);
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  } catch (e) {}
+}
+function noiseBurst(dur, vol) {
+  if (muted) return;
+  try {
+    const c = ac(), t = c.currentTime;
+    const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const g = c.createGain(); g.gain.value = vol || 0.3;
+    src.connect(g); g.connect(c.destination); src.start(t);
+  } catch (e) {}
+}
+const sfx = {
+  door()  { tone(140, 0.18, 'square', 0.14); tone(90, 0.25, 'square', 0.11, 0.05); },
+  knock() { tone(180, 0.12, 'sine', 0.20); tone(150, 0.16, 'sine', 0.20, 0.18); },
+  cam()   { tone(880, 0.06, 'square', 0.05); noiseBurst(0.08, 0.03); },
+  steps() { for (let i = 0; i < 4; i++) tone(300 + Math.random() * 220, 0.05, 'triangle', 0.07, i * 0.09); },
+  run()   { for (let i = 0; i < 10; i++) tone(200 + Math.random() * 150, 0.06, 'triangle', 0.12, i * 0.12); },
+  chime() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, 0.5, 'sine', 0.09, i * 0.22)); },
+  scare() {
+    noiseBurst(0.8, 0.5);
+    [110, 116.5, 123.5, 155.5, 233].forEach(f => {
+      tone(f, 0.7, 'sawtooth', 0.15); tone(f * 0.5, 0.8, 'square', 0.10, 0.06);
+    });
+  },
+  heartbeat() { tone(55, 0.12, 'sine', 0.35); tone(48, 0.14, 'sine', 0.30, 0.22); },
+  giggle() { [660, 550, 440, 330].forEach((f, i) => tone(f, 0.12, 'triangle', 0.09, i * 0.14)); },
+  powerdown() { tone(220, 1.2, 'sawtooth', 0.10); tone(110, 1.4, 'square', 0.08, 0.1); }
+};
+
+/* ================= data ================= */
+const CAMS = [
+  ['stage',   'Cam 01', 'Show Stage',  '🎤🎶✨'],
+  ['dining',  'Cam 02', 'Dining Hall', '🍕🥤🎈'],
+  ['cove',    'Cam 03', 'Parts Cove',  '📦⚙️'],
+  ['arcade',  'Cam 04', 'Arcade',      '🕹️👾🎮'],
+  ['storage', 'Cam 05', 'Storage',     '📦📦🔦'],
+  ['rest',    'Cam 06', 'Restrooms',   '🚻🚰'],
+  ['kitchen', 'Cam 07', 'Kitchen',     ''],
+  ['whall',   'Cam 08', 'West Hall',   '🚪💡'],
+  ['ehall',   'Cam 09', 'East Hall',   '🚪💡'],
+  ['wcorner', 'Cam 10', 'West Corner', '🚪'],
+  ['ecorner', 'Cam 11', 'East Corner', '🚪']
+];
+const CAMINFO = {};
+CAMS.forEach(c => { CAMINFO[c[0]] = { cam: c[1], name: c[2], deco: c[3] }; });
+const AI_TABLE = {
+  1: { hopper: 2,  pippa: 1,  barnaby: 0, rusty: 1 },
+  2: { hopper: 4,  pippa: 3,  barnaby: 1, rusty: 2 },
+  3: { hopper: 7,  pippa: 5,  barnaby: 3, rusty: 4 },
+  4: { hopper: 10, pippa: 8,  barnaby: 6, rusty: 6 },
+  5: { hopper: 13, pippa: 11, barnaby: 9, rusty: 9 }
+};
+const HOURS = ['12 AM', '1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM'];
+const CALLS = {
+  1: "Uh, hello? Hello, hello? Hey, welcome to Barnaby's Pizza Palace!\n\nI'm Lou, I record these for all the new guards. The animatronics wander at night — it's their free-roam mode, totally normal, keeps the servos loose.\n\nThey tend to drift toward the office. If one gets close, shut the door. And keep an eye on the power — doors, lights and cameras all drink from the same well.\n\nYou'll be fine. Probably. Bye!",
+  2: "Hey, Lou again. So the characters were a little... lively last night.\n\nHopper's the fast one, watch the west side. Pippa likes the east. Barnaby mostly stays put, don't worry about him. Yet.\n\nOh — check Parts Cove on Cam 03 now and then. Rusty gets restless if nobody watches. When he leaves the cove, you'll hear him coming. Shut the west door. Trust me.",
+  3: "Lou here. Quick notes: the kitchen camera is audio-only. Something chewed the video feed and frankly I don't want to know what.\n\nIf you hear banging in there, that's normal. Probably.\n\nPippa's been hanging around the restrooms. Don't ask me why. Just keep the east door ready.",
+  4: "Okay, I don't know why I'm still recording these.\n\nEverything is faster tonight. Hopper, Pippa, all of them. Barnaby left the stage yesterday — I saw it on the dining camera and I am NOT paid enough for this.\n\nRusty WILL sprint for the west door. Watch the cove. And whatever you do, don't let the power hit zero.",
+  5: "Last night. I wouldn't blame you for walking out right now.\n\nBarnaby doesn't stay on stage anymore. He moves when the cameras aren't looking. The old guard swore he could hear a music box right before...\n\nDoesn't matter. 12 to 6. Doors, lights, cameras. Survive and the pay's doubled.\n\nGoodbye. Good luck."
+};
+const PAY = {
+  1: '💵 Paycheck: $120.50',
+  2: '💵 Paycheck: $165.25',
+  3: '💵 Paycheck: $210.00',
+  4: '💵 Paycheck: $265.75',
+  5: '💵 Paycheck: $350.00'
+};
+const CAUGHT_LINES = {
+  barnaby: "Barnaby's face fills the doorway. The last thing you hear is a music box winding down.",
+  hopper:  "Hopper was already inside. You never even heard the door.",
+  pippa:   "Pippa's jaw unhinges. The scream harmonizes with the arcade machines.",
+  rusty:   "Rusty hits you at full sprint. Parts Cove sends its regards.",
+  blackout: "The dark took the cameras first. Then the doors. Then you."
+};
+const COVE_STAGES = ['🫥 hidden in the dark', '👀 peeking out', '🐭 lurking at the curtain', '⚠️ GONE'];
+
+/* ================= state ================= */
+let G = null;
+let customAI = { hopper: 0, pippa: 0, barnaby: 0, rusty: 0 };
+function unlocked() {
+  try { return parseInt(localStorage.getItem('barnabys_unlocked') || '1', 10) || 1; }
+  catch (e) { return 1; }
+}
+function setUnlocked(n) {
+  try { localStorage.setItem('barnabys_unlocked', String(Math.min(5, Math.max(1, n)))); } catch (e) {}
+}
+function customUnlocked() {
+  try { return localStorage.getItem('barnabys_custom') === '1'; } catch (e) { return false; }
+}
+
+function makeAnimatronics(ai) {
+  return [
+    { key: 'hopper', name: 'Hopper', emoji: '🐰', side: 'west',
+      path: ['stage', 'dining', 'storage', 'whall', 'wcorner', 'office'], pos: 0, ai: ai.hopper },
+    { key: 'pippa', name: 'Pippa', emoji: '🐶', side: 'east',
+      path: ['stage', 'dining', 'arcade', 'rest', 'ehall', 'ecorner', 'office'], pos: 0, ai: ai.pippa },
+    { key: 'barnaby', name: 'Barnaby', emoji: '🐻', side: 'east',
+      path: ['stage', 'dining', 'rest', 'kitchen', 'ehall', 'ecorner', 'office'], pos: 0, ai: ai.barnaby },
+    { key: 'rusty', name: 'Rusty', emoji: '🐭', side: 'west', cove: true,
+      coveStage: 0, ai: ai.rusty, sprinting: false }
+  ];
+}
+function newGame(night, ai, isCustom) {
+  G = {
+    night, ai, isCustom: !!isCustom, power: 100, secInHour: 0, totalSec: 0, hourIdx: 0,
+    doors: { west: false, east: false }, lights: { west: false, east: false },
+    cams: false, anim: makeAnimatronics(ai),
+    over: false, blackout: false, blackoutTimer: null, msgTimer: null,
+    sprintTimer: null, currentCam: 'stage', timer: null
+  };
+}
+function clearTimers() {
+  if (!G) return;
+  if (G.timer) clearInterval(G.timer);
+  if (G.blackoutTimer) clearTimeout(G.blackoutTimer);
+  if (G.msgTimer) clearTimeout(G.msgTimer);
+  if (G.sprintTimer) clearTimeout(G.sprintTimer);
+}
+function startNight(night, ai, isCustom) {
+  newGame(night, ai, isCustom);
+  $('night-label').textContent = isCustom ? 'Custom Night' : 'Night ' + night;
+  $('blackout').hidden = true;
+  $('jumpscare').hidden = true;
+  document.body.classList.remove('shake');
+  setCams(false);
+  setDoor('west', false); setDoor('east', false);
+  setLight('west', false); setLight('east', false);
+  G.currentCam = 'stage';
+  renderCam();
+  updateHUD();
+  showScreen('screen-game');
+  G.timer = setInterval(tick, 1000);
+}
+
+/* ================= core loop ================= */
+function tick() {
+  if (!G || G.over) return;
+  G.totalSec++; G.secInHour++;
+  const closedDoors = (G.doors.west ? 1 : 0) + (G.doors.east ? 1 : 0);
+  const lightsOn = (G.lights.west ? 1 : 0) + (G.lights.east ? 1 : 0);
+  G.power -= 0.055 + 0.11 * closedDoors + 0.07 * lightsOn + (G.cams ? 0.09 : 0);
+  if (G.power <= 0 && !G.blackout) { G.power = 0; powerOut(); }
+  if (G.secInHour >= 60) {
+    G.secInHour = 0; G.hourIdx++;
+    if (G.hourIdx >= 6) { winNight(); return; }
+  }
+  if (G.totalSec % 5 === 0) moveTick();
+  if (G.totalSec % 4 === 0) {
+    const near = G.anim.some(a => !a.cove && (a.path[a.pos] === 'wcorner' || a.path[a.pos] === 'ecorner'));
+    if (near) sfx.heartbeat();
+  }
+  updateHUD();
+}
+function moveTick() {
+  if (G.blackout || G.over) return;
+  for (const a of G.anim) {
+    if (a.cove) { rustyTick(a); continue; }
+    if (a.ai <= 0) continue;
+    const roll = 1 + Math.floor(Math.random() * 20);
+    if (roll <= a.ai) advance(a);
+    if (G.over) return;
+  }
+  updateHUD();
+}
+function rustyTick(r) {
+  if (r.sprinting || r.ai <= 0) return;
+  // watching the cove stalls him
+  if (G.cams && G.currentCam === 'cove') return;
+  const roll = 1 + Math.floor(Math.random() * 20);
+  if (roll <= r.ai) {
+    r.coveStage++;
+    if (r.coveStage >= 3) rustySprint(r);
+    else msg('You hear scraping metal from Parts Cove…');
+  }
+}
+function rustySprint(r) {
+  r.sprinting = true;
+  sfx.run();
+  msg('RUNNING. Something is sprinting down the west hall!');
+  G.sprintTimer = setTimeout(() => {
+    if (!G || G.over) return;
+    if (G.doors.west) {
+      sfx.knock();
+      msg('BANG! Rusty slammed into the west door and scurried back to the cove.');
+      r.coveStage = 0; r.sprinting = false;
+    } else {
+      caught(r);
+    }
+  }, 3500);
+}
+function advance(a) {
+  const next = a.path[a.pos + 1];
+  if (next === 'office') {
+    if (G.doors[a.side]) {
+      a.pos = Math.max(0, a.pos - 2);
+      sfx.knock();
+      msg('THUMP. ' + a.name + ' hit the ' + a.side + ' door and backed off.');
+    } else {
+      caught(a);
+    }
+    return;
+  }
+  a.pos++;
+  const room = a.path[a.pos];
+  if (room === 'whall' || room === 'ehall') {
+    sfx.steps();
+    msg('Footsteps in the ' + (room === 'whall' ? 'west' : 'east') + ' hall…');
+  } else if (room === 'wcorner' || room === 'ecorner') {
+    sfx.knock();
+    msg('Something is right outside the ' + a.side + ' door. Check the light!');
+  }
+}
+function powerOut() {
+  G.blackout = true;
+  sfx.powerdown();
+  G.doors.west = false; G.doors.east = false;
+  G.lights.west = false; G.lights.east = false;
+  setCams(false);
+  setDoor('west', false); setDoor('east', false);
+  setLight('west', false); setLight('east', false);
+  $('blackout').hidden = false;
+  $('blackout-text').innerHTML = '<b>Power\'s out.</b><br>Something is standing in the east doorway…';
+  sfx.giggle();
+  G.blackoutTimer = setTimeout(() => {
+    if (!G || G.over) return;
+    const b = G.anim.find(a => a.key === 'barnaby');
+    caught(b || G.anim[0], true);
+  }, 14000);
+  updateHUD();
+}
+function winNight() {
+  G.over = true;
+  clearTimers();
+  sfx.chime();
+  if (G.isCustom) {
+    $('caught-emoji').textContent = '🏆';
+    $('victory-text').innerHTML = 'You survived your own custom nightmare.<br>Lou is speechless. Lou is always speechless.';
+    $('victory-pay').textContent = '💵 Prize: bragging rights (priceless)';
+    showScreen('screen-victory');
+    return;
+  }
+  setUnlocked(unlocked() < G.night + 1 ? G.night + 1 : unlocked());
+  $('paycheck').textContent = PAY[G.night];
+  if (G.night >= 5) {
+    try { localStorage.setItem('barnabys_custom', '1'); } catch (e) {}
+    showScreen('screen-victory');
+  } else {
+    showScreen('screen-complete');
+  }
+  refreshNightSelect();
+}
+function caught(a, isBlackout) {
+  if (G.over) return;
+  G.over = true;
+  clearTimers();
+  sfx.scare();
+  $('scare-face').innerHTML = '<span class="corrupt">' + a.emoji + '</span>';
+  $('jumpscare').hidden = false;
+  document.body.classList.add('shake');
+  setTimeout(() => {
+    $('jumpscare').hidden = true;
+    document.body.classList.remove('shake');
+    $('caught-emoji').innerHTML = '<span class="corrupt">' + a.emoji + '</span>';
+    $('caught-title').textContent = 'STUFFED.';
+    $('caught-text').textContent = isBlackout ? CAUGHT_LINES.blackout : CAUGHT_LINES[a.key];
+    showScreen('screen-caught');
+  }, 1400);
+}
+
+/* ================= UI ================= */
+function msg(t) {
+  const el = $('office-msg');
+  el.textContent = t;
+  if (G.msgTimer) clearTimeout(G.msgTimer);
+  G.msgTimer = setTimeout(() => { el.textContent = ''; }, 4500);
+}
+function corrupt(e) { return '<span class="corrupt">' + e + '</span>'; }
+function setDoor(side, closed) {
+  G.doors[side] = closed;
+  const b = $('btn-door-' + side);
+  b.textContent = '🚪 Door: ' + (closed ? 'CLOSED' : 'OPEN');
+  b.classList.toggle('warn', closed);
+}
+function toggleDoor(side) {
+  if (!G || G.over || G.blackout) return;
+  sfx.door();
+  setDoor(side, !G.doors[side]);
+  updateHUD();
+}
+function setLight(side, on) {
+  G.lights[side] = on;
+  const b = $('btn-light-' + side);
+  b.textContent = '💡 Light: ' + (on ? 'ON' : 'OFF');
+  b.classList.toggle('on', on);
+}
+function toggleLight(side) {
+  if (!G || G.over || G.blackout) return;
+  sfx.cam();
+  setLight(side, !G.lights[side]);
+  updateHUD();
+}
+function setCams(up) {
+  if (!G) return;
+  G.cams = up;
+  $('cams-view').hidden = !up;
+  $('office').style.display = up ? 'none' : 'flex';
+  $('btn-cams').style.display = up ? 'none' : '';
+  if (up) { sfx.cam(); renderCam(); }
+}
+function animIn(room) {
+  return G.anim.filter(a => !a.cove && a.path[a.pos] === room);
+}
+function updateHUD() {
+  if (!G) return;
+  $('clock').textContent = HOURS[Math.min(G.hourIdx, 6)];
+  const pct = Math.max(0, Math.round(G.power));
+  $('powerfill').style.width = pct + '%';
+  $('powerfill').style.background = pct > 50
+    ? 'linear-gradient(90deg,#00b894,#55efc4)'
+    : pct > 20 ? 'linear-gradient(90deg,#fdcb6e,#ffeaa7)' : 'linear-gradient(90deg,#d63031,#ff7675)';
+  $('powerpct').textContent = pct + '%';
+  $('pip-door-w').classList.toggle('lit', G.doors.west);
+  $('pip-door-e').classList.toggle('lit', G.doors.east);
+  $('pip-light-w').classList.toggle('lit', G.lights.west);
+  $('pip-light-e').classList.toggle('lit', G.lights.east);
+  $('pip-cam').classList.toggle('lit', G.cams);
+  $('peek-west').innerHTML = (G.lights.west && !G.blackout)
+    ? animIn('wcorner').map(a => corrupt(a.emoji)).join('') : '';
+  $('peek-east').innerHTML = (G.lights.east && !G.blackout)
+    ? animIn('ecorner').map(a => corrupt(a.emoji)).join('') : '';
+}
+function renderCam() {
+  if (!G) return;
+  const r = G.currentCam;
+  document.querySelectorAll('#room-list .bigbtn').forEach(b => b.classList.remove('sel'));
+  const btn = $('cam-room-' + r);
+  if (btn) btn.classList.add('sel');
+  const info = CAMINFO[r];
+  $('cam-room-name').textContent = info.cam + ' — ' + info.name;
+  if (r === 'kitchen') {
+    const b = G.anim.find(a => a.key === 'barnaby' && a.path[a.pos] === 'kitchen');
+    $('cam-emoji').textContent = '📺';
+    $('cam-gag').textContent = b
+      ? 'Audio only. You can hear claws on tile. Barnaby is in the kitchen.'
+      : 'Audio only. Dishes rattling. Probably just the wind. Probably.';
+    return;
+  }
+  if (r === 'cove') {
+    const rusty = G.anim.find(a => a.key === 'rusty');
+    $('cam-emoji').innerHTML = corrupt('🐭');
+    $('cam-gag').textContent = 'Rusty: ' + COVE_STAGES[Math.min(3, rusty.coveStage)] +
+      (rusty.sprinting ? ' — HE\'S RUNNING!' : '');
+    return;
+  }
+  const here = animIn(r);
+  $('cam-emoji').innerHTML = (info.deco + ' ' + here.map(a => corrupt(a.emoji)).join(' ')).trim();
+  $('cam-gag').textContent = here.length
+    ? here.map(a => a.name + ' is staring into the camera.').join(' ')
+    : 'Empty. The static feels heavier than it should.';
+}
+
+/* ================= screens ================= */
+function refreshNightSelect() {
+  const u = unlocked();
+  for (let n = 1; n <= 5; n++) {
+    const b = $('btn-night-' + n);
+    if (n <= u) { b.disabled = false; b.textContent = n; }
+    else { b.disabled = true; b.textContent = '🔒'; }
+  }
+  const cu = customUnlocked();
+  $('btn-custom').disabled = !cu;
+  $('btn-custom').textContent = cu ? '🎛️ Custom Night' : '🎛️ Custom Night 🔒';
+}
+function typeCall(text) {
+  const el = $('call-text');
+  el.textContent = '';
+  let i = 0;
+  const t = setInterval(() => {
+    i++;
+    el.textContent = text.slice(0, i);
+    if (i >= text.length) clearInterval(t);
+  }, 14);
+}
+function showIntro(night) {
+  $('intro-night-label').textContent = 'Night ' + night;
+  $('call-from').textContent = '— Lou, your manager 📞';
+  showScreen('screen-intro');
+  typeCall(CALLS[night]);
+  $('btn-clockin').onclick = () => startNight(night, AI_TABLE[night], false);
+}
+function goTitle() {
+  if (G) { G.over = true; clearTimers(); }
+  $('jumpscare').hidden = true;
+  document.body.classList.remove('shake');
+  refreshNightSelect();
+  showScreen('screen-title');
+}
+
+/* ================= wiring ================= */
+(function buildCamButtons() {
+  const list = $('room-list');
+  CAMS.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'bigbtn';
+    b.id = 'cam-room-' + c[0];
+    b.textContent = c[1];
+    b.onclick = () => { if (G) { G.currentCam = c[0]; sfx.cam(); renderCam(); } };
+    list.appendChild(b);
+  });
+})();
+$('btn-newgame').onclick = () => showIntro(1);
+$('btn-nightselect').onclick = () => {
+  const p = $('nightselect-panel');
+  p.hidden = !p.hidden;
+  $('howto-panel').hidden = true;
+};
+$('btn-howto').onclick = () => {
+  const p = $('howto-panel');
+  p.hidden = !p.hidden;
+  $('nightselect-panel').hidden = true;
+};
+for (let n = 1; n <= 5; n++) {
+  $('btn-night-' + n).onclick = () => showIntro(n);
+}
+$('btn-custom').onclick = () => { if (customUnlocked()) showScreen('screen-custom'); };
+['hopper', 'pippa', 'barnaby', 'rusty'].forEach(k => {
+  $('ai-' + k + '-up').onclick = () => {
+    customAI[k] = Math.min(20, customAI[k] + 1);
+    $('ai-' + k + '-val').textContent = customAI[k];
+  };
+  $('ai-' + k + '-down').onclick = () => {
+    customAI[k] = Math.max(0, customAI[k] - 1);
+    $('ai-' + k + '-val').textContent = customAI[k];
+  };
+});
+$('btn-custom-2020').onclick = () => {
+  ['hopper', 'pippa', 'barnaby', 'rusty'].forEach(k => {
+    customAI[k] = 20; $('ai-' + k + '-val').textContent = '20';
+  });
+};
+$('btn-custom-start').onclick = () => startNight(0, Object.assign({}, customAI), true);
+$('btn-door-west').onclick = () => toggleDoor('west');
+$('btn-door-east').onclick = () => toggleDoor('east');
+$('btn-light-west').onclick = () => toggleLight('west');
+$('btn-light-east').onclick = () => toggleLight('east');
+$('btn-cams').onclick = () => { if (G && !G.over && !G.blackout) setCams(true); };
+$('btn-cams-close').onclick = () => setCams(false);
+$('btn-nextnight').onclick = () => showIntro(Math.min(5, G.night + 1));
+$('btn-retry').onclick = () => startNight(G.night, G.ai, G.isCustom);
+$('btn-title-0').onclick = goTitle;
+$('btn-title-1').onclick = goTitle;
+$('btn-title-2').onclick = goTitle;
+$('btn-title-3').onclick = goTitle;
+$('btn-mute').onclick = () => {
+  muted = !muted;
+  $('btn-mute').textContent = muted ? '🔇' : '🔊';
+};
+
+refreshNightSelect();
+</script>
+</body>
+</html>
