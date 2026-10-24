@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Blackjack — vav's Game Hub</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #0b3d2e 0%, #0d5c3f 50%, #083322 100%);
+    min-height: 100vh; color: #fff;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 16px 40px;
+  }
+  a.back { color: #9be8c3; text-decoration: none; align-self: flex-start; font-size: 1rem; }
+  h1 { font-size: 2rem; margin: 12px 0 4px; text-align: center; }
+  .sub { color: #bfe8d2; margin-bottom: 18px; text-align: center; font-size: 0.95rem; }
+  .balance {
+    background: rgba(0,0,0,0.35); border-radius: 14px; padding: 12px 20px;
+    font-size: 1.15rem; margin-bottom: 20px; text-align: center;
+  }
+  .balance b { color: #ffd54a; }
+  .table { width: 100%; max-width: 520px; }
+  .hand-label { font-size: 1.05rem; margin: 14px 0 8px; }
+  .hand-label span { color: #ffd54a; }
+  .cards { display: flex; gap: 10px; flex-wrap: wrap; min-height: 92px; }
+  .card {
+    width: 62px; height: 88px; background: #fff; color: #111;
+    border-radius: 10px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: bold; line-height: 1.1;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  }
+  .card small { font-size: 0.8rem; font-weight: normal; }
+  .card.red { color: #d32f2f; }
+  .card.back {
+    background: repeating-linear-gradient(45deg, #7b1fa2, #7b1fa2 8px, #4a148c 8px, #4a148c 16px);
+    color: #fff; font-size: 1.8rem;
+  }
+  .msg {
+    min-height: 56px; text-align: center; font-size: 1.25rem; font-weight: bold;
+    margin: 18px 0 8px;
+  }
+  .msg.win { color: #8aff9b; }
+  .msg.lose { color: #ff8a8a; }
+  .msg.push { color: #ffd54a; }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+  button {
+    border: none; border-radius: 30px; padding: 14px 26px;
+    font-size: 1.05rem; font-weight: bold; cursor: pointer; color: #fff;
+    background: #e94560; min-width: 100px;
+  }
+  button:active { transform: scale(0.96); }
+  button:disabled { opacity: 0.35; cursor: default; transform: none; }
+  button.hit { background: #00b4d8; }
+  button.stand { background: #9b5de5; }
+  button.double { background: #f59e0b; color: #3a2c00; }
+  button.deal { background: #22c55e; }
+  button.chip { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); min-width: 64px; padding: 12px 10px; }
+  button.chip.sel { background: #ffd54a; color: #3a2c00; border-color: #ffd54a; }
+  button.small { background: transparent; border: 1px solid rgba(255,255,255,0.4); font-size: 0.85rem; padding: 8px 16px; min-width: 0; }
+  .bet-row { text-align: center; margin: 4px 0 14px; }
+  .bet-row p { margin-bottom: 8px; color: #bfe8d2; }
+  footer { margin-top: 30px; color: rgba(255,255,255,0.5); font-size: 0.85rem; text-align: center; }
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Back to hub</a>
+  <h1>🃏 Blackjack</h1>
+  <p class="sub">Beat the dealer to 21. Dealer stands on 17. Blackjack pays 3:2. Just chips, no real money.</p>
+
+  <div class="balance">Chips: <b id="balance">1000</b> &nbsp;|&nbsp; Bet: <b id="betDisplay">0</b></div>
+
+  <div class="table">
+    <div class="hand-label">Dealer <span id="dealerTotal"></span></div>
+    <div class="cards" id="dealerCards"></div>
+
+    <div class="hand-label">You <span id="playerTotal"></span></div>
+    <div class="cards" id="playerCards"></div>
+  </div>
+
+  <div class="msg" id="msg">Place your bet, then hit Deal.</div>
+
+  <div class="bet-row" id="betRow">
+    <p>Bet amount</p>
+    <div class="controls" id="chipRow">
+      <button class="chip sel" data-bet="10">10</button>
+      <button class="chip" data-bet="25">25</button>
+      <button class="chip" data-bet="50">50</button>
+      <button class="chip" data-bet="100">100</button>
+      <button class="chip" data-bet="250">250</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="deal" id="dealBtn">Deal</button>
+    <button class="hit" id="hitBtn" disabled>Hit</button>
+    <button class="stand" id="standBtn" disabled>Stand</button>
+    <button class="double" id="doubleBtn" disabled>Double</button>
+    <button id="newBtn" disabled>New Round</button>
+  </div>
+
+  <div class="controls" style="margin-top:16px">
+    <button class="small" id="resetBtn">Reset chips to 1000</button>
+  </div>
+
+  <footer>Dealer stands on all 17s · Blackjack pays 3:2 · Push returns your bet</footer>
+
+<script>
+  var SUITS = ['♠','♥','♦','♣'];
+  var RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  var balance = 1000, bet = 10, deck = [], player = [], dealer = [], playing = false, holeHidden = true;
+
+  try {
+    var saved = parseInt(localStorage.getItem('hub-blackjack-balance'), 10);
+    if (!isNaN(saved) && saved >= 0) balance = saved;
+  } catch (e) {}
+
+  function save() { try { localStorage.setItem('hub-blackjack-balance', String(balance)); } catch (e) {} }
+  function el(id) { return document.getElementById(id); }
+  function newDeck() {
+    deck = [];
+    for (var s = 0; s < 4; s++) for (var r = 0; r < 13; r++) deck.push({rank: RANKS[r], suit: SUITS[s]});
+    for (var i = deck.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+    }
+  }
+  function value(hand) {
+    var total = 0, aces = 0;
+    for (var i = 0; i < hand.length; i++) {
+      var r = hand[i].rank;
+      if (r === 'A') { total += 11; aces++; }
+      else if (r === 'K' || r === 'Q' || r === 'J') total += 10;
+      else total += parseInt(r, 10);
+    }
+    while (total > 21 && aces > 0) { total -= 10; aces--; }
+    return total;
+  }
+  function isBlackjack(hand) { return hand.length === 2 && value(hand) === 21; }
+  function render() {
+    el('balance').textContent = balance;
+    el('betDisplay').textContent = playing ? bet : 0;
+    var dHtml = '', pHtml = '';
+    for (var i = 0; i < dealer.length; i++) {
+      if (i === 1 && holeHidden) { dHtml += '<div class="card back">🂠</div>'; continue; }
+      var c = dealer[i];
+      dHtml += '<div class="card' + ((c.suit === '♥' || c.suit === '♦') ? ' red' : '') + '">' + c.rank + '<small>' + c.suit + '</small></div>';
+    }
+    for (var j = 0; j < player.length; j++) {
+      var pc = player[j];
+      pHtml += '<div class="card' + ((pc.suit === '♥' || pc.suit === '♦') ? ' red' : '') + '">' + pc.rank + '<small>' + pc.suit + '</small></div>';
+    }
+    el('dealerCards').innerHTML = dHtml;
+    el('playerCards').innerHTML = pHtml;
+    el('dealerTotal').textContent = dealer.length ? (holeHidden ? value([dealer[0]]) + ' + ?' : value(dealer)) : '';
+    el('playerTotal').textContent = player.length ? value(player) : '';
+  }
+  function setMsg(text, cls) {
+    var m = el('msg');
+    m.textContent = text;
+    m.className = 'msg' + (cls ? ' ' + cls : '');
+  }
+  function setButtons(phase) {
+    el('dealBtn').disabled = phase !== 'bet';
+    el('hitBtn').disabled = phase !== 'play';
+    el('standBtn').disabled = phase !== 'play';
+    el('doubleBtn').disabled = phase !== 'play' || player.length !== 2 || balance < bet;
+    el('newBtn').disabled = phase !== 'done';
+    el('betRow').style.display = phase === 'bet' ? 'block' : 'none';
+  }
+  function endRound(result, text, cls) {
+    playing = false;
+    holeHidden = false;
+    if (result === 'win') balance += bet;
+    else if (result === 'bj') balance += Math.floor(bet * 1.5);
+    else if (result === 'lose') balance -= bet;
+    save();
+    render();
+    setMsg(text, cls);
+    setButtons('done');
+  }
+  function dealerPlay() {
+    holeHidden = false;
+    while (value(dealer) < 17) dealer.push(deck.pop());
+    render();
+    var pv = value(player), dv = value(dealer);
+    if (dv > 21) endRound('win', 'Dealer busts! You win ' + bet + ' chips.', 'win');
+    else if (dv > pv) endRound('lose', 'Dealer wins with ' + dv + '. You lose ' + bet + ' chips.', 'lose');
+    else if (dv < pv) endRound('win', 'You win with ' + pv + ' vs ' + dv + '! +' + bet + ' chips.', 'win');
+    else endRound('push', 'Push — ' + pv + ' vs ' + dv + '. Bet returned.', 'push');
+  }
+  function deal() {
+    if (bet > balance) { setMsg('Not enough chips for that bet!', 'lose'); return; }
+    newDeck();
+    player = [deck.pop(), deck.pop()];
+    dealer = [deck.pop(), deck.pop()];
+    playing = true;
+    holeHidden = true;
+    render();
+    if (isBlackjack(player) && isBlackjack(dealer)) { endRound('push', 'Both have blackjack — push!', 'push'); return; }
+    if (isBlackjack(player)) { endRound('bj', 'Blackjack! You win ' + Math.floor(bet * 1.5) + ' chips (3:2).', 'win'); return; }
+    if (isBlackjack(dealer)) { holeHidden = false; render(); endRound('lose', 'Dealer has blackjack. You lose ' + bet + ' chips.', 'lose'); return; }
+    setMsg('Your move — Hit, Stand, or Double.');
+    setButtons('play');
+  }
+  function hit() {
+    player.push(deck.pop());
+    render();
+    if (value(player) > 21) { endRound('lose', 'Bust! ' + value(player) + ' over 21. You lose ' + bet + ' chips.', 'lose'); }
+    else setButtons('play');
+  }
+  function stand() { dealerPlay(); }
+  function doubleDown() {
+    if (balance < bet) return;
+    bet *= 2;
+    player.push(deck.pop());
+    render();
+    if (value(player) > 21) endRound('lose', 'Bust after doubling! ' + value(player) + '. You lose ' + bet + ' chips.', 'lose');
+    else dealerPlay();
+  }
+  function newRound() {
+    player = []; dealer = []; playing = false; holeHidden = true;
+    var sel = document.querySelector('#chipRow .chip.sel');
+    bet = sel ? parseInt(sel.dataset.bet, 10) : 10;
+    if (balance < 10) {
+      setMsg('Out of chips! Hit "Reset chips to 1000" to keep playing.');
+      render(); setButtons('done'); el('newBtn').disabled = true; el('dealBtn').disabled = true;
+      return;
+    }
+    render();
+    setMsg('Place your bet, then hit Deal.');
+    setButtons('bet');
+    // refresh chip selection highlight
+    var chips = document.querySelectorAll('#chipRow .chip');
+    for (var i = 0; i < chips.length; i++) chips[i].classList.toggle('sel', parseInt(chips[i].dataset.bet, 10) === bet);
+  }
+
+  document.querySelectorAll('#chipRow .chip').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      bet = parseInt(btn.dataset.bet, 10);
+      document.querySelectorAll('#chipRow .chip').forEach(function (b) { b.classList.remove('sel'); });
+      btn.classList.add('sel');
+    });
+  });
+  el('dealBtn').addEventListener('click', deal);
+  el('hitBtn').addEventListener('click', hit);
+  el('standBtn').addEventListener('click', stand);
+  el('doubleBtn').addEventListener('click', doubleDown);
+  el('newBtn').addEventListener('click', newRound);
+  el('resetBtn').addEventListener('click', function () {
+    balance = 1000; save(); newRound();
+  });
+
+  render();
+  setButtons('bet');
+</script>
+</body>
+</html>
