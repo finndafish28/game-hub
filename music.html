@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>🎵 Good Kid Player 2.0</title>
+<title>🎵 Good Kid Player 2.1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   :root {
@@ -220,7 +220,7 @@
   <ul id="trackList"></ul>
 
   <div id="credit">Music: Good Kid — DMCA/Content ID free for creators &bull; goodkidofficial.com<br>
-  <span id="apkLink"><a href="https://github.com/finndafish28/game-hub/releases/download/v2.0/GoodKidPlayer.apk">📱 Prefer an app? Download the Android APK (v2.0)</a><br></span>
+  <span id="apkLink"><a href="https://github.com/finndafish28/game-hub/releases/download/v2.1/GoodKidPlayer.apk">📱 Prefer an app? Download the Android APK (v2.1)</a><br></span>
   Pitch &amp; speed are fully independent in the app. On the web, pitch also changes tempo a little.</div>
 </div>
 <div id="toast"></div>
@@ -242,6 +242,16 @@ const TRACKS = [
   { t: "Break",                  ep: "GK4", f: "music/10-break.mp3",                a: "www/gk4/04-break.mp3" },
   { t: "Dance Class",            ep: "GK4", f: "music/11-dance-class.mp3",           a: "www/gk4/05-dance-class.mp3" },
   { t: "Premier Inn",            ep: "GK4", f: "music/12-premier-inn.mp3",           a: "www/gk4/06-premier-inn.mp3" },
+  { t: "Rift",                   ep: "ALBUM", f: "music/13-rift.mp3",                 a: "www/cwhos/01-rift.mp3" },
+  { t: "Eastside",               ep: "ALBUM", f: "music/14-eastside.mp3",             a: "www/cwhos/02-eastside.mp3" },
+  { t: "Coffee",                 ep: "ALBUM", f: "music/15-coffee.mp3",               a: "www/cwhos/03-coffee.mp3" },
+  { t: "Cicada",                 ep: "ALBUM", f: "music/16-cicada.mp3",               a: "www/cwhos/04-cicada.mp3" },
+  { t: "Tea Leaves",             ep: "ALBUM", f: "music/17-tea-leaves.mp3",           a: "www/cwhos/05-tea-leaves.mp3" },
+  { t: "Alone With Me",          ep: "ALBUM", f: "music/18-alone-with-me.mp3",        a: "www/cwhos/06-alone-with-me.mp3" },
+  { t: "Ghost Keeper",           ep: "ALBUM", f: "music/19-ghost-keeper.mp3",         a: "www/cwhos/07-ghost-keeper.mp3" },
+  { t: "Tornado",                ep: "ALBUM", f: "music/20-tornado.mp3",              a: "www/cwhos/08-tornado.mp3" },
+  { t: "Wall",                   ep: "ALBUM", f: "music/21-wall.mp3",                 a: "www/cwhos/09-wall.mp3" },
+  { t: "Ginger Lemonade",        ep: "ALBUM", f: "music/22-ginger-lemonade.mp3",      a: "www/cwhos/10-ginger-lemonade.mp3" },
 ];
 const IS_NATIVE = typeof window.AndroidPlayer !== 'undefined';
 if (IS_NATIVE) document.getElementById('apkLink').style.display = 'none';
